@@ -1,4 +1,4 @@
-name: Build EXE
+name: Build Tsmart Pro EXE
 
 on:
   push:
@@ -25,11 +25,11 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --noconfirm --windowed --name "Tsmart_Tool" main.py
+        # تضمين مجلد mtkclient داخل ملف الـ EXE
+        pyinstaller --onefile --noconfirm --windowed --add-data "mtkclient;mtkclient" --name "Tsmart_Pro_Tool" main.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Tsmart_Tool_EXE
-        path: dist/Tsmart_Tool.exe
-
+        name: Tsmart_Pro_EXE
+        path: dist/Tsmart_Pro_Tool.exe

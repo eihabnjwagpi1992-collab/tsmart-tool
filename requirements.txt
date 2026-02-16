@@ -2,3 +2,9 @@ customtkinter
 requests
 packaging
 pyinstaller
+pyusb
+pyserial
+pycryptodome
+cryptography
+json-rpc
+usb-protocol
