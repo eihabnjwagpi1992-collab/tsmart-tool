@@ -115,7 +115,10 @@ class TsmartTool(ctk.CTk):
 
         # Navigation
         self.btn_mtk = ctk.CTkButton(self.sidebar, text="MTK Pro (Bypass/FRP)", command=lambda: self.show_view("MTK"), height=45, fg_color="#E67E22" if self.is_activated else "#555")
-        self.btn_mtk.pack(pady=10, padx=20, fill="x")
+        self.btn_mtk.pack(pady=5, padx=20, fill="x")
+
+        self.btn_unisoc = ctk.CTkButton(self.sidebar, text="Unisoc Pro (Unlock)", command=lambda: self.show_view("Unisoc"), height=45, fg_color="#9B59B6" if self.is_activated else "#555")
+        self.btn_unisoc.pack(pady=5, padx=20, fill="x")
         
         ctk.CTkButton(self.sidebar, text="Xiaomi Pro", command=lambda: self.show_view("Xiaomi"), height=40, fg_color="transparent", border_width=1).pack(pady=5, padx=20, fill="x")
         ctk.CTkButton(self.sidebar, text="ADB / Fastboot", command=lambda: self.show_view("ADB"), height=40, fg_color="transparent", border_width=1).pack(pady=5, padx=20, fill="x")
@@ -135,7 +138,7 @@ class TsmartTool(ctk.CTk):
         self.show_view("MTK")
 
     def show_view(self, name):
-        if not self.is_activated and name == "MTK":
+        if not self.is_activated and name in ["MTK", "Unisoc"]:
             tk.messagebox.showwarning("Subscription Required", "This module requires an active annual subscription.")
             return
 
@@ -144,37 +147,46 @@ class TsmartTool(ctk.CTk):
                 widget.destroy()
             
         if name == "MTK": self.render_mtk()
+        elif name == "Unisoc": self.render_unisoc()
         elif name == "Xiaomi": self.render_xiaomi()
         elif name == "ADB": self.render_adb()
 
     def render_mtk(self):
-        ctk.CTkLabel(self.main_view, text="MediaTek Professional Module (mtkclient)", font=("Roboto", 24, "bold"), text_color="#E67E22").pack(pady=20)
-        
+        ctk.CTkLabel(self.main_view, text="MediaTek Professional Module", font=("Roboto", 24, "bold"), text_color="#E67E22").pack(pady=20)
+        grid = ctk.CTkFrame(self.main_view, fg_color="transparent")
+        grid.pack(expand=True, fill="both", padx=50)
+        ctk.CTkButton(grid, text="Bypass Auth (Brom)", width=250, height=50, command=lambda: self.run_tool("MTK", "python3 mtkclient/mtk payload-bypass")).pack(pady=10)
+        ctk.CTkButton(grid, text="Erase FRP (MTK)", width=250, height=50, command=lambda: self.run_tool("MTK", "python3 mtkclient/mtk e frp")).pack(pady=10)
+        ctk.CTkButton(grid, text="Unlock Bootloader", width=250, height=50, fg_color="#C0392B", command=lambda: self.run_tool("MTK", "python3 mtkclient/mtk stage2 unlock")).pack(pady=10)
+
+    def render_unisoc(self):
+        ctk.CTkLabel(self.main_view, text="Unisoc Professional Module", font=("Roboto", 24, "bold"), text_color="#9B59B6").pack(pady=20)
         grid = ctk.CTkFrame(self.main_view, fg_color="transparent")
         grid.pack(expand=True, fill="both", padx=50)
         
-        # أزرار mtkclient
-        ctk.CTkButton(grid, text="Bypass Auth (Brom)", width=250, height=50, command=lambda: self.run_mtk("python3 mtkclient/mtk payload-bypass")).pack(pady=10)
-        ctk.CTkButton(grid, text="Erase FRP (MTK)", width=250, height=50, command=lambda: self.run_mtk("python3 mtkclient/mtk e frp")).pack(pady=10)
-        ctk.CTkButton(grid, text="Unlock Bootloader", width=250, height=50, fg_color="#C0392B", command=lambda: self.run_mtk("python3 mtkclient/mtk stage2 unlock")).pack(pady=10)
-        ctk.CTkButton(grid, text="Read Full Flash", width=250, height=50, command=lambda: self.run_mtk("python3 mtkclient/mtk rf flash.bin")).pack(pady=10)
+        ctk.CTkLabel(grid, text="Unlock Bootloader via Identifier Token", font=("Roboto", 14)).pack(pady=10)
+        self.token_entry = ctk.CTkEntry(grid, placeholder_text="Enter Identifier Token", width=350, height=40)
+        self.token_entry.pack(pady=10)
+        
+        ctk.CTkButton(grid, text="Unlock Bootloader (Unisoc)", width=250, height=50, fg_color="#9B59B6", 
+                      command=lambda: self.run_tool("Unisoc", f"python3 -m unisoc unlock {self.token_entry.get()}")).pack(pady=10)
+        ctk.CTkButton(grid, text="Relock Bootloader", width=250, height=50, 
+                      command=lambda: self.run_tool("Unisoc", f"python3 -m unisoc lock {self.token_entry.get()}")).pack(pady=10)
 
     def show_activation(self):
         dialog = ctk.CTkInputDialog(text="Enter 1-Year Activation Key:", title="License Activation")
         key = dialog.get_input()
         if key and key.startswith("TSMART-PRO-"):
-            # محاكاة تفعيل سنوي
             self.users[self.current_user]["expiry"] = "2027-02-17"
             self.save_user_db()
             tk.messagebox.showinfo("Success", "Account activated for 1 Year!")
-            self.logout() # إعادة دخول لتحديث الحالة
+            self.logout()
         else:
             tk.messagebox.showerror("Invalid Key", "Please contact admin for a valid subscription key.")
 
-    def run_mtk(self, cmd):
-        self.log(f"Initializing MTK Port...")
+    def run_tool(self, tool_name, cmd):
+        self.log(f"Initializing {tool_name} Port...")
         self.log(f"Running: {cmd}")
-        # هنا يتم استدعاء ملفات mtkclient التي تم دمجها
         threading.Thread(target=lambda: self.execute_cmd(cmd), daemon=True).start()
 
     def execute_cmd(self, cmd):
