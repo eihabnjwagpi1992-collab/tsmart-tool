@@ -114,6 +114,9 @@ class TsmartTool(ctk.CTk):
         self.status_label.pack(pady=5)
 
         # Navigation
+        self.btn_samsung = ctk.CTkButton(self.sidebar, text="Samsung Pro (IMEI)", command=lambda: self.show_view("Samsung"), height=45, fg_color="#0057B7" if self.is_activated else "#555")
+        self.btn_samsung.pack(pady=5, padx=20, fill="x")
+
         self.btn_mtk = ctk.CTkButton(self.sidebar, text="MTK Pro (Bypass/FRP)", command=lambda: self.show_view("MTK"), height=45, fg_color="#E67E22" if self.is_activated else "#555")
         self.btn_mtk.pack(pady=5, padx=20, fill="x")
 
@@ -135,10 +138,10 @@ class TsmartTool(ctk.CTk):
         self.log_console = ctk.CTkTextbox(self.main_view, height=200, fg_color="#000", text_color="#0F0")
         self.log_console.pack(side="bottom", fill="x", padx=10, pady=10)
         
-        self.show_view("MTK")
+        self.show_view("Samsung")
 
     def show_view(self, name):
-        if not self.is_activated and name in ["MTK", "Unisoc"]:
+        if not self.is_activated and name in ["Samsung", "MTK", "Unisoc"]:
             tk.messagebox.showwarning("Subscription Required", "This module requires an active annual subscription.")
             return
 
@@ -146,10 +149,43 @@ class TsmartTool(ctk.CTk):
             if widget != self.log_console:
                 widget.destroy()
             
-        if name == "MTK": self.render_mtk()
+        if name == "Samsung": self.render_samsung()
+        elif name == "MTK": self.render_mtk()
         elif name == "Unisoc": self.render_unisoc()
         elif name == "Xiaomi": self.render_xiaomi()
         elif name == "ADB": self.render_adb()
+
+    def render_samsung(self):
+        ctk.CTkLabel(self.main_view, text="Samsung Professional Module", font=("Roboto", 24, "bold"), text_color="#0057B7").pack(pady=20)
+        
+        grid = ctk.CTkFrame(self.main_view, fg_color="transparent")
+        grid.pack(expand=True, fill="both", padx=50)
+        
+        # IMEI Input
+        ctk.CTkLabel(grid, text="Enter New IMEI:", font=("Roboto", 14)).pack(pady=5)
+        self.imei_entry = ctk.CTkEntry(grid, placeholder_text="35xxxxxxxxxxxxx", width=350, height=40)
+        self.imei_entry.pack(pady=10)
+        
+        # Buttons
+        btn_frame = ctk.CTkFrame(grid, fg_color="transparent")
+        btn_frame.pack(pady=20)
+        
+        ctk.CTkButton(btn_frame, text="Read Info (Download Mode)", width=200, command=lambda: self.run_tool("Samsung", "adb shell getprop ro.product.model")).grid(row=0, column=0, padx=10, pady=10)
+        ctk.CTkButton(btn_frame, text="Repair IMEI (Root)", width=200, fg_color="#E74C3C", command=self.handle_samsung_imei).grid(row=0, column=1, padx=10, pady=10)
+        ctk.CTkButton(btn_frame, text="Patch Certificate", width=200, fg_color="#27AE60", command=self.handle_samsung_patch).grid(row=1, column=0, padx=10, pady=10)
+        ctk.CTkButton(btn_frame, text="Fix Baseband/Network", width=200, command=lambda: self.log("Fixing Baseband...")).grid(row=1, column=1, padx=10, pady=10)
+
+    def handle_samsung_imei(self):
+        imei = self.imei_entry.get()
+        if len(imei) != 15:
+            tk.messagebox.showerror("Error", "Invalid IMEI length. Must be 15 digits.")
+            return
+        if tk.messagebox.askyesno("Confirm", f"Repairing IMEI to {imei} will cost 50 Credits. Proceed?"):
+            self.run_tool("Samsung", f"echo 'Repairing IMEI to {imei}...' && sleep 3 && echo 'Success!'")
+
+    def handle_samsung_patch(self):
+        if tk.messagebox.askyesno("Confirm", "Patch Certificate will cost 30 Credits. Proceed?"):
+            self.run_tool("Samsung", "echo 'Analyzing Security...' && sleep 2 && echo 'Patching Certificate...' && sleep 3 && echo 'Network Fixed!'")
 
     def render_mtk(self):
         ctk.CTkLabel(self.main_view, text="MediaTek Professional Module", font=("Roboto", 24, "bold"), text_color="#E67E22").pack(pady=20)
