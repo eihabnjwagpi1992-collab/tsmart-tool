@@ -115,7 +115,7 @@ class UsbClass(DeviceClass):
         super().__init__(loglevel, portconfig, devclass)
         self.load_windows_dll()
         self.connected = False
-        self.timeout = 1000
+        self.timeout = 2000
         self.buffer = array.array('B', [0]) * 1048576
         self.vid = None
         self.pid = None

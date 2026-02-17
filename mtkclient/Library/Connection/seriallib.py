@@ -51,7 +51,7 @@ class SerialClass(DeviceClass):
             self.debug("Got port: {}, initializing".format(port))
             self.device = serial.Serial(port=port, baudrate=115200, bytesize=serial.EIGHTBITS,
                                         parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,
-                                        timeout=500,
+                                        timeout=1000,
                                         xonxoff=False, dsrdtr=False, rtscts=False)
             self.portname = port
         else:

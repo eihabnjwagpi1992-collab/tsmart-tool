@@ -20,6 +20,8 @@ def resource_path(relative_path):
 # --- BINARY PATHS ---
 ADB_PATH = resource_path(os.path.join("bin", "adb.exe"))
 FASTBOOT_PATH = resource_path(os.path.join("bin", "fastboot.exe"))
+MTK_EXE_PATH = resource_path(os.path.join("bin", "mtk.exe")) # Standalone MTK Binary
+SAMSUNG_EXE_PATH = resource_path(os.path.join("bin", "samsung_tool.exe")) # Standalone Samsung Binary
 
 # --- GLOBAL SETTINGS ---
 ctk.set_appearance_mode("Dark")
@@ -29,11 +31,11 @@ class TsmartToolPro(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Tsmart Pro Tool - Advanced GSM Suite v2.0")
+        self.title("Tsmart Pro Tool - Advanced GSM Suite v2.1")
         self.geometry("1300x850")
         
         self.current_user = "Admin"
-        self.is_activated = True # Default for development
+        self.is_activated = True 
         
         self.setup_ui()
         self.start_device_monitor()
@@ -45,7 +47,7 @@ class TsmartToolPro(ctk.CTk):
         self.grid_columnconfigure(2, weight=0) # Right Monitor
         self.grid_rowconfigure(0, weight=1)
 
-        # 1. SIDE NAVIGATION (Vertical Menu)
+        # 1. SIDE NAVIGATION
         self.sidebar = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color="#1E1E1E")
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         
@@ -92,8 +94,14 @@ class TsmartToolPro(ctk.CTk):
         self.log_frame = ctk.CTkFrame(self.content_area, height=180, fg_color="#111", corner_radius=10)
         self.log_frame.pack(side="bottom", fill="x", padx=10, pady=10)
         
-        self.log_console = ctk.CTkTextbox(self.log_frame, fg_color="transparent", text_color="#0F0", font=("Consolas", 12))
+        self.log_console = ctk.CTkTextbox(self.log_frame, fg_color="transparent", font=("Consolas", 12))
         self.log_console.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Configure tags for colored logging
+        self.log_console.tag_config("info", foreground="#0F0")    # Green
+        self.log_console.tag_config("error", foreground="#F00")   # Red
+        self.log_console.tag_config("warning", foreground="#F1C40F") # Yellow
+        self.log_console.tag_config("success", foreground="#3498DB") # Blue
         
         self.progress_bar = ctk.CTkProgressBar(self.log_frame, height=10, corner_radius=5)
         self.progress_bar.pack(fill="x", padx=10, pady=(0, 5))
@@ -117,7 +125,6 @@ class TsmartToolPro(ctk.CTk):
         container = ctk.CTkFrame(self.content_area, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=20)
         
-        # Column 1: Flashing (LabelFrame style)
         flash_frame = ctk.CTkFrame(container, width=400, corner_radius=10, border_width=1, border_color="#333")
         flash_frame.pack(side="left", fill="both", expand=True, padx=10)
         ctk.CTkLabel(flash_frame, text="FLASHING", font=("Roboto", 16, "bold"), text_color="#3498DB").pack(pady=10)
@@ -129,9 +136,9 @@ class TsmartToolPro(ctk.CTk):
             ctk.CTkEntry(f, placeholder_text=f"Select {part} file...", height=35).pack(side="left", fill="x", expand=True, padx=5)
             ctk.CTkButton(f, text="📁", width=40, height=35, fg_color="#333").pack(side="right")
             
-        ctk.CTkButton(flash_frame, text="FLASH FIRMWARE", height=50, fg_color="#0057B7", font=("Roboto", 16, "bold"), command=self.mock_flash).pack(pady=30, padx=20, fill="x")
+        ctk.CTkButton(flash_frame, text="FLASH FIRMWARE", height=50, fg_color="#0057B7", font=("Roboto", 16, "bold"), 
+                       command=lambda: self.run_binary_task(SAMSUNG_EXE_PATH, ["--flash"])).pack(pady=30, padx=20, fill="x")
 
-        # Column 2: Services
         service_frame = ctk.CTkFrame(container, width=400, corner_radius=10, border_width=1, border_color="#333")
         service_frame.pack(side="right", fill="both", expand=True, padx=10)
         ctk.CTkLabel(service_frame, text="SECURITY & SERVICES", font=("Roboto", 16, "bold"), text_color="#F1C40F").pack(pady=10)
@@ -147,7 +154,8 @@ class TsmartToolPro(ctk.CTk):
         ]
         
         for i, (text, color) in enumerate(services):
-            btn = ctk.CTkButton(btn_grid, text=text, fg_color=color, height=45, command=lambda t=text: self.log(f"Starting {t}...", "warning"))
+            btn = ctk.CTkButton(btn_grid, text=text, fg_color=color, height=45, 
+                                 command=lambda t=text: self.run_binary_task(SAMSUNG_EXE_PATH, [f"--{t.lower().replace(' ', '_')}"]))
             btn.grid(row=i//2, column=i%2, padx=5, pady=5, sticky="nsew")
         btn_grid.grid_columnconfigure((0,1), weight=1)
 
@@ -156,14 +164,12 @@ class TsmartToolPro(ctk.CTk):
         container = ctk.CTkFrame(self.content_area, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=20)
         
-        # Top: Scatter Selection
         top_frame = ctk.CTkFrame(container, height=100, corner_radius=10)
         top_frame.pack(fill="x", pady=(0, 10))
         ctk.CTkLabel(top_frame, text="Scatter File:", width=100).pack(side="left", padx=10)
         ctk.CTkEntry(top_frame, placeholder_text="Select MTK Scatter File...", height=35).pack(side="left", fill="x", expand=True, padx=5)
         ctk.CTkButton(top_frame, text="Load Scatter", width=120, fg_color="#E67E22").pack(side="right", padx=10)
 
-        # Middle: Partition Manager
         list_frame = ctk.CTkFrame(container, corner_radius=10, border_width=1)
         list_frame.pack(fill="both", expand=True)
         ctk.CTkLabel(list_frame, text="Partition Manager", font=("Roboto", 14, "bold")).pack(pady=5)
@@ -172,15 +178,64 @@ class TsmartToolPro(ctk.CTk):
         self.part_list.pack(fill="both", expand=True, padx=10, pady=10)
         self.part_list.insert("1.0", " [X] preloader\n [X] recovery\n [X] boot\n [X] system\n [X] vendor\n [ ] userdata")
 
-        # Bottom: Operations
         bot_frame = ctk.CTkFrame(container, height=120, fg_color="transparent")
         bot_frame.pack(fill="x", pady=(10, 0))
         ops = [("Erase FRP", "#E67E22"), ("Unlock BL", "#C0392B"), ("Format FS", "#2C3E50"), ("Safe Format", "#27AE60")]
         for i, (text, color) in enumerate(ops):
-            ctk.CTkButton(bot_frame, text=text, fg_color=color, height=45, command=lambda t=text: self.log(f"MTK Operation: {t}")).grid(row=0, column=i, padx=5, sticky="nsew")
+            ctk.CTkButton(bot_frame, text=text, fg_color=color, height=45, 
+                           command=lambda t=text: self.run_binary_task(MTK_EXE_PATH, [f"--{t.lower().replace(' ', '_')}"])).grid(row=0, column=i, padx=5, sticky="nsew")
         bot_frame.grid_columnconfigure((0,1,2,3), weight=1)
 
-    # 3. PENUMBRA (XIAOMI)
+    # --- CORE ENGINE FUNCTIONS ---
+    def log(self, msg, level="info"):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        formatted_msg = f"[{timestamp}] {msg}\n"
+        self.log_console.insert("end", formatted_msg, level)
+        self.log_console.see("end")
+
+    def run_binary_task(self, binary_path, args):
+        self.log(f"Executing: {os.path.basename(binary_path)} {' '.join(args)}", "warning")
+        self.progress_bar.set(0)
+        
+        def run():
+            try:
+                # Use subprocess.Popen for real-time output if needed
+                process = subprocess.Popen([binary_path] + args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                
+                for line in process.stdout:
+                    self.log(line.strip())
+                    # Mock progress update based on log output
+                    if "%" in line:
+                        try:
+                            p = int(line.split("%")[0].split()[-1]) / 100
+                            self.progress_bar.set(p)
+                        except: pass
+                
+                process.wait()
+                if process.returncode == 0:
+                    self.log("OPERATION SUCCESSFUL!", "success")
+                    self.progress_bar.set(1.0)
+                else:
+                    self.log(f"OPERATION FAILED! (Code: {process.returncode})", "error")
+            except Exception as e:
+                self.log(f"CRITICAL ERROR: {str(e)}", "error")
+                
+        threading.Thread(target=run, daemon=True).start()
+
+    def start_device_monitor(self):
+        def monitor():
+            while True:
+                try:
+                    # In real tool, this would call ADB/Fastboot/COM list
+                    self.device_list.delete("1.0", "end")
+                    self.device_list.insert("end", ">>> SCANNING PORTS...\n")
+                    # Example of calling adb.exe
+                    res = subprocess.run([ADB_PATH, "devices"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                    self.device_list.insert("end", res.stdout)
+                except: pass
+                time.sleep(3)
+        threading.Thread(target=monitor, daemon=True).start()
+
     def render_penumbra(self):
         ctk.CTkLabel(self.content_area, text="PENUMBRA XIAOMI ENGINE", font=("Roboto", 24, "bold"), text_color="#E74C3C").pack(pady=20)
         grid = ctk.CTkFrame(self.content_area, fg_color="transparent")
@@ -188,45 +243,13 @@ class TsmartToolPro(ctk.CTk):
         
         ops = ["Bypass Mi Cloud", "Remove FRP (Xiaomi)", "Fix System Update", "Disable Find Device", "Auth Flash (EDL)"]
         for op in ops:
-            ctk.CTkButton(grid, text=op, height=50, fg_color="#E74C3C", font=("Roboto", 15, "bold"), command=lambda o=op: self.log(f"Penumbra executing {o}...")).pack(pady=5, fill="x")
-
-    # --- CORE ENGINE FUNCTIONS ---
-    def log(self, msg, level="info"):
-        color = "#0F0" # Green
-        if level == "error": color = "#F00" # Red
-        elif level == "warning": color = "#F1C40F" # Yellow
-        
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        self.log_console.insert("end", f"[{timestamp}] {msg}\n")
-        self.log_console.see("end")
-        # Note: True colored text in Textbox requires tags, simplified for now
-
-    def mock_flash(self):
-        self.log("Initializing Flash Engine...", "warning")
-        def run():
-            for i in range(101):
-                time.sleep(0.05)
-                self.progress_bar.set(i/100)
-                if i % 20 == 0: self.log(f"Writing block {i}%...")
-            self.log("FLASH COMPLETED SUCCESSFULLY!", "success")
-            tk.messagebox.showinfo("Success", "Firmware Flashed Successfully!")
-        threading.Thread(target=run).start()
-
-    def start_device_monitor(self):
-        def monitor():
-            while True:
-                try:
-                    # Mock monitoring - in real tool, this calls ADB/Fastboot/COM list
-                    self.device_list.delete("1.0", "end")
-                    self.device_list.insert("end", ">>> COM3: Samsung Mobile USB\n>>> ADB: SM-G973F Connected\n>>> FASTBOOT: Waiting...")
-                except: pass
-                time.sleep(3)
-        threading.Thread(target=monitor, daemon=True).start()
+            ctk.CTkButton(grid, text=op, height=50, fg_color="#E74C3C", font=("Roboto", 15, "bold"), 
+                           command=lambda o=op: self.run_binary_task(MTK_EXE_PATH, [f"--{o.lower().replace(' ', '_')}"])).pack(pady=5, fill="x")
 
     def render_adb(self):
         ctk.CTkLabel(self.content_area, text="Global ADB & Fastboot Tools", font=("Roboto", 22, "bold")).pack(pady=20)
-        ctk.CTkButton(self.content_area, text="Reboot to Download", command=lambda: self.log("Rebooting to Download Mode...")).pack(pady=10)
-        ctk.CTkButton(self.content_area, text="Reboot to Recovery", command=lambda: self.log("Rebooting to Recovery...")).pack(pady=10)
+        ctk.CTkButton(self.content_area, text="Reboot to Download", command=lambda: self.run_binary_task(ADB_PATH, ["reboot", "download"])).pack(pady=10)
+        ctk.CTkButton(self.content_area, text="Reboot to Recovery", command=lambda: self.run_binary_task(ADB_PATH, ["reboot", "recovery"])).pack(pady=10)
         ctk.CTkButton(self.content_area, text="Open Device Manager", fg_color="#333", command=lambda: os.system("devmgmt.msc")).pack(pady=10)
 
 if __name__ == "__main__":
