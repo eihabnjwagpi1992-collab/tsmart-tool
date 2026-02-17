@@ -25,8 +25,8 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        # تضمين مجلدات mtkclient و unisoc داخل ملف الـ EXE
-        pyinstaller --onefile --noconfirm --windowed --add-data "mtkclient;mtkclient" --add-data "unisoc;unisoc" --name "Tsmart_Pro_Tool" main.py
+        # تضمين مجلدات mtkclient و unisoc و penumbra ومجلد bin داخل ملف الـ EXE
+        pyinstaller --onefile --noconfirm --windowed --add-data "mtkclient;mtkclient" --add-data "unisoc;unisoc" --add-data "penumbra;penumbra" --add-data "bin;bin" --name "Tsmart_Pro_Tool" main.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4

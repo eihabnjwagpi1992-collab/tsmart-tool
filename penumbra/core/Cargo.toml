@@ -1,0 +1,45 @@
+[package]
+name = "penumbra"
+version = "1.0.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+documentation = "https://shomy.is-a.dev/penumbra"
+description = """
+A library for interacting with MediaTek based devices,
+for flashing firmware, readback, bootloader unlocking, and more.
+"""
+keywords = ["MediaTek", "flashing", "bootloader", "android"]
+
+[dependencies]
+aes = "0.8.4"
+async-trait = "0.1.89"
+cbc = "0.1.2"
+cipher = "0.4.4"
+crc32fast = "1.5.0"
+downcast-rs = "2.0.2"
+env_logger = "0.11.8"
+hex = "0.4.3"
+log = "0.4.27"
+num-bigint = "0.4.6"
+num_enum = "0.7.4"
+nusb = { version = "0.2.1", features = ["tokio"], optional = true }
+rand = "0.9.2"
+rusb = { version = "0.9.4", optional = true}
+serialport = { version = "4.7.3", optional = true }
+sha2 = "0.10.9"
+simple-xml = "0.1.10"
+thiserror = "2.0.17"
+tokio = { version = "1.47.1", features = ["fs", "time", "sync", "io-util", "rt-multi-thread"]}
+tokio-serial = { version = "5.4.5", optional = true }
+xmlcmd-derive = { path = "xmlcmd_derive" }
+
+[features]
+default = ["nusb"]
+libusb = ["rusb"]
+serial = ["serialport", "tokio-serial"]
+libusb-exp = []
+no_localslakeyring = []
+no_exploits = []

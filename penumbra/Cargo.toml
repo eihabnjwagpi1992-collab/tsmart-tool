@@ -1,0 +1,22 @@
+[workspace]
+resolver = "3"
+members = [
+    "core",
+    "tui"
+]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "AGPL-3.0-or-later"
+authors = ["Shomy <shomy@shomy.is-a.dev>"]
+homepage = "https://penumbra.itssho.my"
+repository = "https://github.com/shomykohai/penumbra"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+debug = false

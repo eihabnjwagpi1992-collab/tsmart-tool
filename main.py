@@ -8,6 +8,19 @@ import json
 import sys
 from datetime import datetime
 
+# Function to get the correct path for resources (works for both script and EXE)
+def resource_path(relative_path):
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+# Paths for binaries
+ADB_PATH = resource_path(os.path.join("bin", "adb.exe"))
+FASTBOOT_PATH = resource_path(os.path.join("bin", "fastboot.exe"))
+
 # الإعدادات العامة للمظهر
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -123,7 +136,9 @@ class TsmartTool(ctk.CTk):
         self.btn_unisoc = ctk.CTkButton(self.sidebar, text="Unisoc Pro (Unlock)", command=lambda: self.show_view("Unisoc"), height=45, fg_color="#9B59B6" if self.is_activated else "#555")
         self.btn_unisoc.pack(pady=5, padx=20, fill="x")
         
-        ctk.CTkButton(self.sidebar, text="Xiaomi Pro", command=lambda: self.show_view("Xiaomi"), height=40, fg_color="transparent", border_width=1).pack(pady=5, padx=20, fill="x")
+        self.btn_penumbra = ctk.CTkButton(self.sidebar, text="Penumbra (Xiaomi/Auth)", command=lambda: self.show_view("Penumbra"), height=45, fg_color="#E74C3C" if self.is_activated else "#555")
+        self.btn_penumbra.pack(pady=5, padx=20, fill="x")
+        
         ctk.CTkButton(self.sidebar, text="ADB / Fastboot", command=lambda: self.show_view("ADB"), height=40, fg_color="transparent", border_width=1).pack(pady=5, padx=20, fill="x")
         
         if not self.is_activated:
@@ -141,7 +156,7 @@ class TsmartTool(ctk.CTk):
         self.show_view("Samsung")
 
     def show_view(self, name):
-        if not self.is_activated and name in ["Samsung", "MTK", "Unisoc"]:
+        if not self.is_activated and name in ["Samsung", "MTK", "Unisoc", "Penumbra"]:
             tk.messagebox.showwarning("Subscription Required", "This module requires an active annual subscription.")
             return
 
@@ -152,25 +167,19 @@ class TsmartTool(ctk.CTk):
         if name == "Samsung": self.render_samsung()
         elif name == "MTK": self.render_mtk()
         elif name == "Unisoc": self.render_unisoc()
-        elif name == "Xiaomi": self.render_xiaomi()
+        elif name == "Penumbra": self.render_penumbra()
         elif name == "ADB": self.render_adb()
 
     def render_samsung(self):
         ctk.CTkLabel(self.main_view, text="Samsung Professional Module", font=("Roboto", 24, "bold"), text_color="#0057B7").pack(pady=20)
-        
         grid = ctk.CTkFrame(self.main_view, fg_color="transparent")
         grid.pack(expand=True, fill="both", padx=50)
-        
-        # IMEI Input
         ctk.CTkLabel(grid, text="Enter New IMEI:", font=("Roboto", 14)).pack(pady=5)
         self.imei_entry = ctk.CTkEntry(grid, placeholder_text="35xxxxxxxxxxxxx", width=350, height=40)
         self.imei_entry.pack(pady=10)
-        
-        # Buttons
         btn_frame = ctk.CTkFrame(grid, fg_color="transparent")
         btn_frame.pack(pady=20)
-        
-        ctk.CTkButton(btn_frame, text="Read Info (Download Mode)", width=200, command=lambda: self.run_tool("Samsung", "adb shell getprop ro.product.model")).grid(row=0, column=0, padx=10, pady=10)
+        ctk.CTkButton(btn_frame, text="Read Info (Download Mode)", width=200, command=lambda: self.run_tool("Samsung", f'"{ADB_PATH}" shell getprop ro.product.model')).grid(row=0, column=0, padx=10, pady=10)
         ctk.CTkButton(btn_frame, text="Repair IMEI (Root)", width=200, fg_color="#E74C3C", command=self.handle_samsung_imei).grid(row=0, column=1, padx=10, pady=10)
         ctk.CTkButton(btn_frame, text="Patch Certificate", width=200, fg_color="#27AE60", command=self.handle_samsung_patch).grid(row=1, column=0, padx=10, pady=10)
         ctk.CTkButton(btn_frame, text="Fix Baseband/Network", width=200, command=lambda: self.log("Fixing Baseband...")).grid(row=1, column=1, padx=10, pady=10)
@@ -199,15 +208,23 @@ class TsmartTool(ctk.CTk):
         ctk.CTkLabel(self.main_view, text="Unisoc Professional Module", font=("Roboto", 24, "bold"), text_color="#9B59B6").pack(pady=20)
         grid = ctk.CTkFrame(self.main_view, fg_color="transparent")
         grid.pack(expand=True, fill="both", padx=50)
-        
         ctk.CTkLabel(grid, text="Unlock Bootloader via Identifier Token", font=("Roboto", 14)).pack(pady=10)
         self.token_entry = ctk.CTkEntry(grid, placeholder_text="Enter Identifier Token", width=350, height=40)
         self.token_entry.pack(pady=10)
-        
         ctk.CTkButton(grid, text="Unlock Bootloader (Unisoc)", width=250, height=50, fg_color="#9B59B6", 
                       command=lambda: self.run_tool("Unisoc", f"python3 -m unisoc unlock {self.token_entry.get()}")).pack(pady=10)
         ctk.CTkButton(grid, text="Relock Bootloader", width=250, height=50, 
                       command=lambda: self.run_tool("Unisoc", f"python3 -m unisoc lock {self.token_entry.get()}")).pack(pady=10)
+
+    def render_penumbra(self):
+        ctk.CTkLabel(self.main_view, text="Penumbra Xiaomi/Auth Module", font=("Roboto", 24, "bold"), text_color="#E74C3C").pack(pady=20)
+        grid = ctk.CTkFrame(self.main_view, fg_color="transparent")
+        grid.pack(expand=True, fill="both", padx=50)
+        
+        ctk.CTkButton(grid, text="Bypass Mi Cloud", width=250, height=50, fg_color="#E74C3C", command=lambda: self.run_tool("Penumbra", "python3 penumbra/penumbra.py bypass micloud")).pack(pady=10)
+        ctk.CTkButton(grid, text="Remove FRP (Xiaomi)", width=250, height=50, command=lambda: self.run_tool("Penumbra", "python3 penumbra/penumbra.py remove frp")).pack(pady=10)
+        ctk.CTkButton(grid, text="Fix System Update", width=250, height=50, command=lambda: self.run_tool("Penumbra", "python3 penumbra/penumbra.py fix update")).pack(pady=10)
+        ctk.CTkButton(grid, text="Disable Find Device", width=250, height=50, command=lambda: self.run_tool("Penumbra", "python3 penumbra/penumbra.py disable finddevice")).pack(pady=10)
 
     def show_activation(self):
         dialog = ctk.CTkInputDialog(text="Enter 1-Year Activation Key:", title="License Activation")
@@ -238,13 +255,10 @@ class TsmartTool(ctk.CTk):
         self.log_console.insert("end", f">>> {msg}\n")
         self.log_console.see("end")
 
-    def render_xiaomi(self):
-        ctk.CTkLabel(self.main_view, text="Xiaomi Pro Services", font=("Roboto", 22, "bold")).pack(pady=20)
-        ctk.CTkButton(self.main_view, text="Fastboot to EDL", width=200).pack(pady=10)
-
     def render_adb(self):
         ctk.CTkLabel(self.main_view, text="ADB/Fastboot Tools", font=("Roboto", 22, "bold")).pack(pady=20)
-        ctk.CTkButton(self.main_view, text="Check Devices", command=lambda: self.execute_cmd("adb devices")).pack(pady=10)
+        ctk.CTkButton(self.main_view, text="Check ADB Devices", command=lambda: self.execute_cmd(f'"{ADB_PATH}" devices')).pack(pady=10)
+        ctk.CTkButton(self.main_view, text="Check Fastboot Devices", command=lambda: self.execute_cmd(f'"{FASTBOOT_PATH}" devices')).pack(pady=10)
 
     def logout(self):
         self.current_user = None
