@@ -19,9 +19,9 @@ wmi
 pycryptodome
 cryptography
 
-# --- MTK & Exploit Engines ---
-keystone-engine
-capstone
+# --- MTK & Exploit Engines (Pre-compiled binaries) ---
+# keystone-engine  <-- Often fails on CI, better to include as binary
+# capstone         <-- Often fails on CI, better to include as binary
 
 # --- Build Tools ---
 packaging
