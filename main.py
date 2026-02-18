@@ -102,10 +102,16 @@ class TSPToolPro(ctk.CTk):
 
     def show_update_dialog(self, data):
         """إظهار نافذة منبثقة احترافية تخبر المستخدم بوجود تحديث جديد"""
-        update_win = ctk.CTkToplevel(self)
-        update_win.title("Update Available")
-        update_win.geometry("450x350")
-        update_win.attributes("-topmost", True)
+        if hasattr(self, 'update_window') and self.update_window.winfo_exists():
+            self.update_window.focus()
+            return
+
+        self.update_window = ctk.CTkToplevel(self)
+        self.update_window.title("Update Available")
+        self.update_window.geometry("450x350")
+        self.update_window.attributes("-topmost", True)
+        
+        update_win = self.update_window
         
         ctk.CTkLabel(update_win, text="✨ New Update Available! ✨", font=("Roboto", 18, "bold"), text_color="#2ECC71").pack(pady=15)
         ctk.CTkLabel(update_win, text=f"Version: {data['version']}", font=("Roboto", 14)).pack()
@@ -475,7 +481,7 @@ class TSPToolPro(ctk.CTk):
             self.content_area,
             text="CHECK HWID",
             command=lambda: self.log(
-                "Your HWID: " + os.popen("wmic uuid get value").read().strip(),
+                "Your HWID: " + self.hwid,
                 "warning",
             ),
         ).pack(pady=10)
@@ -532,21 +538,26 @@ class TSPToolPro(ctk.CTk):
 
     def show_activation_screen(self, status):
         """إظهار شاشة التفعيل إذا لم يكن هناك اشتراك نشط"""
-        if hasattr(self, '_activation_shown'):
+        if hasattr(self, 'activation_window') and self.activation_window.winfo_exists():
+            self.activation_window.focus()
             return
-        self._activation_shown = True
+
+        self.withdraw() # إخفاء النافذة الرئيسية بدلاً من تغيير عنوانها
+        self.activation_window = ctk.CTkToplevel(self)
+        self.activation_window.title("TSP TOOL PRO - Activation Required")
+        self.activation_window.geometry("500x400")
+        self.activation_window.protocol("WM_DELETE_WINDOW", sys.exit) # إغلاق البرنامج إذا أغلق المستخدم نافذة التفعيل
         
-        self.title("TSP TOOL PRO - Activation Required")
-        self.geometry("500x400")
+        app_win = self.activation_window
         
-        ctk.CTkLabel(self, text="TSP TOOL PRO", font=("Impact", 32), text_color="#E74C3C").pack(pady=20)
-        ctk.CTkLabel(self, text="Activation Required", font=("Roboto", 18)).pack(pady=10)
+        ctk.CTkLabel(app_win, text="TSP TOOL PRO", font=("Impact", 32), text_color="#E74C3C").pack(pady=20)
+        ctk.CTkLabel(app_win, text="Activation Required", font=("Roboto", 18)).pack(pady=10)
         
-        hwid_frame = ctk.CTkFrame(self)
+        hwid_frame = ctk.CTkFrame(app_win)
         hwid_frame.pack(pady=10, padx=20, fill="x")
         ctk.CTkLabel(hwid_frame, text=f"Your HWID: {self.hwid}", font=("Consolas", 10)).pack(pady=5)
         
-        key_entry = ctk.CTkEntry(self, placeholder_text="Enter Activation Key...", width=300, height=40)
+        key_entry = ctk.CTkEntry(app_win, placeholder_text="Enter Activation Key...", width=300, height=40)
         key_entry.pack(pady=20)
         
         def activate():
@@ -560,8 +571,8 @@ class TSPToolPro(ctk.CTk):
             else:
                 tk.messagebox.showerror("Error", msg)
 
-        ctk.CTkButton(self, text="Activate Now", fg_color="#E74C3C", command=activate, height=40).pack(pady=10)
-        ctk.CTkLabel(self, text=f"Status: {status}", text_color="#AAA").pack(pady=10)
+        ctk.CTkButton(app_win, text="Activate Now", fg_color="#E74C3C", command=activate, height=40).pack(pady=10)
+        ctk.CTkLabel(app_win, text=f"Status: {status}", text_color="#AAA").pack(pady=10)
 
 
 if __name__ == "__main__":
