@@ -6,6 +6,10 @@ import traceback
 import subprocess
 import threading
 import ctypes # لإضافة التوافق مع ويندوز 10
+try:
+    from subprocess import CREATE_NO_WINDOW
+except ImportError:
+    CREATE_NO_WINDOW = 0x08000000  # Default Windows Flag for no window
 
 import customtkinter as ctk
 
