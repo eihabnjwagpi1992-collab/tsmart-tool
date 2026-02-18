@@ -26,3 +26,6 @@ capstone
 # --- Build Tools ---
 packaging
 pyinstaller
+
+# Environment Configuration
+python-dotenv

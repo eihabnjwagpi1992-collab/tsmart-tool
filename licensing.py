@@ -1,9 +1,10 @@
+import hashlib
 import json
 import os
-import hashlib
 from datetime import datetime, timedelta
 
 LICENSE_FILE = "tsp_license.json"
+
 
 class TSPLicensing:
     def __init__(self, hwid):
@@ -30,19 +31,22 @@ class TSPLicensing:
             parts = key.split("-")
             if parts[0] != "TSP" or len(parts) < 3:
                 return False, "Invalid Key Format"
-            
+
             months = int(parts[1])
             expiry_date = datetime.now() + timedelta(days=months * 30)
-            
+
             self.data = {
                 "hwid": self.hwid,
                 "key": key,
                 "activated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "expiry_date": expiry_date.strftime("%Y-%m-%d %H:%M:%S"),
-                "status": "active"
+                "status": "active",
             }
             self._save_license(self.data)
-            return True, f"Activated for {months} Months. Expiry: {self.data['expiry_date']}"
+            return (
+                True,
+                f"Activated for {months} Months. Expiry: {self.data['expiry_date']}",
+            )
         except Exception as e:
             return False, str(e)
 
@@ -50,14 +54,14 @@ class TSPLicensing:
         """التحقق من حالة الاشتراك الحالية"""
         if not self.data or self.data.get("hwid") != self.hwid:
             return False, "No Active Subscription"
-        
+
         expiry = datetime.strptime(self.data["expiry_date"], "%Y-%m-%d %H:%M:%S")
         if datetime.now() > expiry:
             return False, "Subscription Expired"
-        
+
         days_left = (expiry - datetime.now()).days
         return True, {
             "days_left": days_left,
             "expiry": self.data["expiry_date"],
-            "key_type": self.data["key"].split("-")[1] + " Months"
+            "key_type": self.data["key"].split("-")[1] + " Months",
         }

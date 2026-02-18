@@ -1,22 +1,26 @@
 import hashlib
-import subprocess
 import os
+import subprocess
 import sys
+
 
 def get_hwid():
     """توليد رقم تعريف فريد للجهاز بناءً على بصمة الهاردوير"""
     try:
         # استخدام رقم لوحة الأم أو UUID النظام
-        if os.name == 'nt':
+        if os.name == "nt":
             cmd = "wmic csproduct get uuid"
-            uuid = subprocess.check_output(cmd, shell=True).decode().split('\n')[1].strip()
+            uuid = (
+                subprocess.check_output(cmd, shell=True).decode().split("\n")[1].strip()
+            )
         else:
             # للينكس (لأغراض الاختبار في الساندبوكس)
-            uuid = os.popen('cat /etc/machine-id').read().strip()
-        
+            uuid = os.popen("cat /etc/machine-id").read().strip()
+
         return hashlib.sha256(uuid.encode()).hexdigest().upper()[:16]
     except:
         return "UNKNOWN-HWID-0000"
+
 
 def verify_license():
     """التحقق من ترخيص الأداة (محاكاة لنظام حقيقي)"""
@@ -26,16 +30,17 @@ def verify_license():
     license_file = "license.key"
     if not os.path.exists(license_file):
         with open(license_file, "w") as f:
-            f.write(current_hwid) # تفعيل تلقائي لأول مرة
+            f.write(current_hwid)  # تفعيل تلقائي لأول مرة
         return True, current_hwid
-    
+
     with open(license_file, "r") as f:
         saved_hwid = f.read().strip()
-    
+
     if saved_hwid == current_hwid:
         return True, current_hwid
     else:
         return False, current_hwid
+
 
 def protect_code():
     """تعليمات لاستخدام PyArmor لتشفير الكود"""

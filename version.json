@@ -1,0 +1,5 @@
+{
+    "version": "2.5.1",
+    "download_url": "https://github.com/eihabnjwagpi1992-collab/tsmart-tool/archive/refs/heads/main.zip",
+    "changelog": "- Added Turbo Mode for Samsung BROM.\n- Integrated Penumbra Smart DA Injection.\n- Fixed critical bugs in Telegram Bot.\n- Improved overall stability and speed."
+}
