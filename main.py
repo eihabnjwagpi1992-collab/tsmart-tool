@@ -217,7 +217,7 @@ class TSPToolPro(ctk.CTk):
         ctk.CTkLabel(self.content_area, text="SETTINGS", font=("Roboto", 24, "bold")).pack(pady=20)
         ctk.CTkSwitch(self.content_area, text="Auto-Update Engine").pack(pady=10)
         ctk.CTkButton(self.content_area, text="Check for Updates", command=self.check_for_updates).pack(pady=10)
-        ctk.CTkButton(self.content_area, text="CHECK HWID", command=lambda: self.log(f"Your HWID: {os.popen(\'wmic uuid get value\').read().strip()}", "warning")).pack(pady=10)
+        ctk.CTkButton(self.content_area, text="CHECK HWID", command=lambda: self.log("Your HWID: " + os.popen("wmic uuid get value").read().strip(), "warning")).pack(pady=10)
         ctk.CTkButton(self.content_area, text="Install All Drivers", fg_color="#27AE60", command=self.install_drivers).pack(pady=20)
 
     def install_drivers(self):
