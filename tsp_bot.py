@@ -9,7 +9,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 # --- إعدادات البوت (Configuration) ---
 
 # 1. التوكن الخاص بك
-BOT_TOKEN = "8219574824:AAFI_VwEQTZ0spUd3fjJ0A89S-MoWMN8yxc"
+BOT_TOKEN "7983630628:AAGQgzpeU0-Iut2gmOMSS4rCF1mXZNNCD8c"
 
 # 2. آيدي الأدمن (حسابك الشخصي للتحكم الكامل)
 ADMIN_ID = 7175591691  
