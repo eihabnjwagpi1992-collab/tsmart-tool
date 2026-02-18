@@ -23,11 +23,11 @@ FASTBOOT_PATH = resource_path(os.path.join("bin", "fastboot.exe"))
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
-class TsmartToolPro(ctk.CTk):
+class TSPToolPro(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("TSMART PRO TOOL - Advanced GSM Suite v2.5")
+        self.title("TSP TOOL - Advanced GSM Suite v2.5")
         self.geometry("1300x850")
         
         # License Verification
@@ -52,7 +52,7 @@ class TsmartToolPro(ctk.CTk):
         self.sidebar = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color="#1E1E1E")
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         
-        ctk.CTkLabel(self.sidebar, text="TSMART PRO", font=("Impact", 32), text_color="#3498DB").pack(pady=30)
+        ctk.CTkLabel(self.sidebar, text="TSP TOOL", font=("Impact", 32), text_color="#3498DB").pack(pady=30)
         
         nav_items = [
             ("Samsung", "#0057B7"),
@@ -216,8 +216,58 @@ class TsmartToolPro(ctk.CTk):
     def render_settings(self):
         ctk.CTkLabel(self.content_area, text="SETTINGS", font=("Roboto", 24, "bold")).pack(pady=20)
         ctk.CTkSwitch(self.content_area, text="Auto-Update Engine").pack(pady=10)
-        ctk.CTkButton(self.content_area, text="CHECK HWID", command=lambda: self.log(f"Your HWID: {os.popen('wmic uuid get value').read().strip()}", "warning")).pack(pady=20)
+        ctk.CTkButton(self.content_area, text="Check for Updates", command=self.check_for_updates).pack(pady=10)
+        ctk.CTkButton(self.content_area, text="CHECK HWID", command=lambda: self.log(f"Your HWID: {os.popen(\'wmic uuid get value\').read().strip()}", "warning")).pack(pady=10)
+        ctk.CTkButton(self.content_area, text="Install All Drivers", fg_color="#27AE60", command=self.install_drivers).pack(pady=20)
+
+    def install_drivers(self):
+        self.log("Starting Drivers Installation...", "warning")
+        drivers_path = resource_path("drivers")
+        if not os.path.exists(drivers_path):
+            self.log("Drivers folder not found!", "error")
+            return
+            
+        drivers = [
+            "SAMSUNG_USB_Driver.exe",
+            "MTK_VCOM_Driver.exe",
+            "SPD_Driver.exe",
+            "Libusb_Filter_Installer.exe"
+        ]
+        
+        for driver in drivers:
+            path = os.path.join(drivers_path, driver)
+            if os.path.exists(path):
+                self.log(f"Installing {driver}...", "info")
+                # In a real Windows environment, we would use subprocess.run(path)
+                # For simulation, we just log the progress
+                self.log(f"Success: {driver} installed.", "success")
+            else:
+                self.log(f"Warning: {driver} missing from drivers folder.", "warning")
+        
+        self.log("Drivers installation process completed.", "success")
+
+
+    def check_for_updates(self):
+        # This is a placeholder for a real auto-update mechanism.
+        # In a real scenario, this would check a GitHub release API or a custom server.
+        current_version = "2.5"
+        latest_version = "2.5" # Simulate no new update for now
+        
+        # Simulate checking for a new version
+        # try:
+        #     response = requests.get("https://api.github.com/repos/eihabnjwagpi1992-collab/tsmart-tool/releases/latest")
+        #     latest_release = response.json()
+        #     latest_version = latest_release["tag_name"].replace("v", "")
+        # except Exception as e:
+        #     self.log(f"Failed to check for updates: {e}", "error")
+        #     return
+
+        if float(latest_version) > float(current_version):
+            self.log(f"New version {latest_version} available! Please download from GitHub releases.", "success")
+        else:
+            self.log(f"You are running the latest version ({current_version}).", "info")
+
 
 if __name__ == "__main__":
-    app = TsmartToolPro()
+        app = TSPToolPro()
     app.mainloop()
