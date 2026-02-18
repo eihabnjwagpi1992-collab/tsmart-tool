@@ -6,6 +6,7 @@ from datetime import datetime
 from device_engine import DeviceMonitor, get_device_info
 from bridge_engine import BridgeEngine
 from security import verify_license, get_hwid
+from licensing import TSPLicensing
 
 # --- RESOURCE PATH FUNCTION ---
 def resource_path(relative_path):
@@ -30,15 +31,18 @@ class TSPToolPro(ctk.CTk):
         self.title("TSP TOOL - Advanced GSM Suite v2.5")
         self.geometry("1300x850")
         
-        # License Verification
-        is_valid, hwid = verify_license()
-        if not is_valid:
-            tk.messagebox.showerror("License Error", f"HWID Not Authorized: {hwid}")
-            self.destroy()
+        # License & HWID Check
+        self.hwid = get_hwid()
+        self.license_manager = TSPLicensing(self.hwid)
+        
+        is_active, status = self.license_manager.check_status()
+        if not is_active:
+            self.show_activation_screen(status)
             return
 
         self.bridge = BridgeEngine(self.log)
         self.setup_ui()
+        self.log(f"Subscription Active: {status['key_type']} | Days Left: {status['days_left']}", "success")
         
         # Start Device Monitor
         self.monitor = DeviceMonitor(ADB_PATH, FASTBOOT_PATH, self.update_device_list)
@@ -218,6 +222,34 @@ class TSPToolPro(ctk.CTk):
         if filename:
             entry_widget.delete(0, "end")
             entry_widget.insert(0, filename)
+
+    def show_activation_screen(self, message):
+        self.title("TSP TOOL - Activation Required")
+        self.geometry("500x350")
+        
+        container = ctk.CTkFrame(self, fg_color="#1A1A1A")
+        container.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        ctk.CTkLabel(container, text="TSP TOOL v2.5", font=("Impact", 28), text_color="#3498DB").pack(pady=20)
+        ctk.CTkLabel(container, text=f"HWID: {self.hwid}", font=("Consolas", 12), text_color="#AAA").pack(pady=5)
+        ctk.CTkLabel(container, text=message, font=("Roboto", 14), text_color="#E74C3C").pack(pady=10)
+        
+        key_entry = ctk.CTkEntry(container, placeholder_text="Enter Activation Key (3, 6, 12 Months)...", width=350, height=45)
+        key_entry.pack(pady=10)
+        
+        def activate():
+            key = key_entry.get().strip()
+            success, msg = self.license_manager.activate_key(key)
+            if success:
+                tk.messagebox.showinfo("Success", msg)
+                self.destroy()
+                # Restart App or continue
+                os.execl(sys.executable, sys.executable, *sys.argv)
+            else:
+                tk.messagebox.showerror("Error", msg)
+
+        ctk.CTkButton(container, text="ACTIVATE NOW", height=45, fg_color="#27AE60", command=activate).pack(pady=20)
+        ctk.CTkLabel(container, text="Contact @Admin on Telegram for Keys", font=("Roboto", 10), text_color="#555").pack(side="bottom", pady=10)
 
     def render_settings(self):
         ctk.CTkLabel(self.content_area, text="SETTINGS", font=("Roboto", 24, "bold")).pack(pady=20)
