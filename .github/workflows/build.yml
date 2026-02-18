@@ -33,7 +33,8 @@ jobs:
           --add-data "unisoc;unisoc" `
           --add-data "penumbra;penumbra" `
           --add-data "bin;bin" `
-          --name "Tsmart_Pro_Tool_v2.1" `
+          --collect-all customtkinter `
+          --name "Tsmart_Pro_Tool_v2.5" `
           --hidden-import="usb.backend.libusb1" `
           --hidden-import="serial" `
           main.py
@@ -42,4 +43,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Tsmart_Pro_Win11_Stable
-        path: dist/Tsmart_Pro_Tool_v2.1.exe
+        path: dist/Tsmart_Pro_Tool_v2.5.exe
