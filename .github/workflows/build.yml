@@ -23,7 +23,7 @@ jobs:
         pip install pyinstaller
         pip install -r requirements.txt
 
-    - name: Build Standalone EXE via Hardened Spec
+    - name: Build Standalone EXE via CI Safe Spec
       run: |
         pyinstaller --clean tsmart_pro.spec
 
