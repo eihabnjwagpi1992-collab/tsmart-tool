@@ -1,39 +1,49 @@
 # -*- mode: python ; coding: utf-8 -*-
-# TSmart Pro Tool - Hardened Build Spec (v3.2.2)
 import os
 import sys
-from PyInstaller.utils.hooks import collect_all, collect_submodules
+from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
-# --- Smart Dependency Collection ---
+# --- Dependency Collection ---
 def get_all_from(package_name):
-    datas, binaries, hiddenimports = collect_all(package_name)
+    try:
+        datas, binaries, hiddenimports = collect_all(package_name)
+    except:
+        datas, binaries, hiddenimports = [], [], []
     return datas, binaries, hiddenimports
 
-# تجميع المكتبات الحرجة
+# Collect Critical UI and System Libraries
 ctk_datas, ctk_binaries, ctk_hidden = get_all_from('customtkinter')
 pil_datas, pil_binaries, pil_hidden = get_all_from('Pillow')
 wmi_datas, wmi_binaries, wmi_hidden = get_all_from('wmi')
 
-# دمج الموارد الأصلية
+# Resource Bundling
 all_datas = ctk_datas + pil_datas + wmi_datas + [
     ('mtkclient', 'mtkclient'),
     ('unisoc', 'unisoc'),
     ('penumbra', 'penumbra'),
     ('bin', 'bin'),
     ('drivers', 'drivers'),
-    ('version.json', '.')
+    ('version.json', '.'),
+    ('logo.png', '.')
 ]
 
-# دمج الاستيرادات المخفية
+# Hidden Imports for Runtime Stability
 all_hidden = ctk_hidden + pil_hidden + wmi_hidden + [
     'usb.backend.libusb1',
     'serial',
     'packaging',
     'packaging.version',
     'PIL._tkinter_finder',
-    'win32timezone'
+    'win32timezone',
+    'requests',
+    'jsonrpc',
+    'pyusb',
+    'pyserial',
+    'pywin32',
+    'cryptography',
+    'pycryptodome'
 ]
 
 a = Analysis(
@@ -45,7 +55,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['keystone-engine', 'capstone'], # استبعاد المسببات المحتملة للفشل إذا كانت غير موجودة
+    excludes=['keystone-engine', 'capstone'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -74,5 +84,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=os.path.join('mtkclient', 'icon.ico') if os.path.exists(os.path.join('mtkclient', 'icon.ico')) else None,
+    icon=os.path.join('mtkclient', 'gui', 'images', 'logo_64.png') if os.path.exists(os.path.join('mtkclient', 'gui', 'images', 'logo_64.png')) else None,
 )
