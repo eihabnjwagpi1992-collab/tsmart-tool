@@ -34,7 +34,7 @@ class TSPToolPro(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("TSP TOOL - Advanced GSM Suite v2.5")
+        self.title("TSP TOOL PRO - Ultimate GSM Suite v2.5")
         self.geometry("1300x850")
 
         # License & HWID Check
@@ -106,7 +106,7 @@ class TSPToolPro(ctk.CTk):
         self.sidebar.grid(row=0, column=0, sticky="nsew")
 
         ctk.CTkLabel(
-            self.sidebar, text="TSP TOOL", font=("Impact", 32), text_color="#3498DB"
+            self.sidebar, text="TSP TOOL PRO", font=("Impact", 32), text_color="#E74C3C"
         ).pack(pady=30)
 
         nav_items = [
@@ -319,190 +319,116 @@ class TSPToolPro(ctk.CTk):
             options_frame,
             text="Smart DA Injection",
             variable=self.smart_da_var,
-            text_color="#2ECC71",
-            font=("Roboto", 12, "bold"),
         ).pack(side="left", padx=10)
 
-        # 2. خيار وضع التوربو (الصيد السريع)
+        # 2. خيار وضع التوربو لأجهزة سامسونج
         self.turbo_mode_var = tk.BooleanVar(value=False)
-
-        def toggle_turbo():
-            self.monitor.set_turbo_mode(self.turbo_mode_var.get())
-            status = "ENABLED" if self.turbo_mode_var.get() else "DISABLED"
-            self.log(f"🚀 Turbo Mode (100ms Scan) {status}", "warning")
-
         ctk.CTkCheckBox(
             options_frame,
             text="Turbo Auto-Catch (Samsung BROM)",
             variable=self.turbo_mode_var,
-            command=toggle_turbo,
             text_color="#F1C40F",
-            font=("Roboto", 12, "bold"),
         ).pack(side="left", padx=10)
 
-        mtk_ops = [
-            ("Read Info", "printgpt"),
-            ("Erase FRP", "erase frp"),
-            ("Unlock BL", "stage2 bootloader unlock"),
-            ("Relock BL", "stage2 bootloader lock"),
-            ("Format Data", "erase userdata"),
-            ("Dump Preloader", "r preloader preloader.bin"),
+        ops = [
+            ("🔓 FRP Reset", "erase_frp"),
+            ("🧹 Factory Reset", "factory_reset"),
+            ("🔓 Bootloader Unlock", "unlock_bootloader"),
+            ("🔒 Bootloader Lock", "lock_bootloader"),
+            ("💾 Read Dump", "read_dump"),
+            ("🔥 Write Flash", "write_flash"),
         ]
 
-        for i, (text, cmd) in enumerate(mtk_ops):
-            btn = ctk.CTkButton(
+        for i, (text, cmd) in enumerate(ops):
+            r, c = i // 2, i % 2
+            ctk.CTkButton(
                 btn_frame,
                 text=text,
                 height=50,
-                fg_color="#E67E22",
+                fg_color="#D35400",
                 command=lambda c=cmd: self.bridge.run_mtk_command(
-                    c.split()[0],
-                    c.split()[1:],
+                    c, 
                     use_custom_da=self.smart_da_var.get(),
-                    wait_for_device=self.turbo_mode_var.get(),
+                    wait_for_device=self.turbo_mode_var.get()
                 ),
-            )
-            btn.grid(row=i // 2, column=i % 2, padx=10, pady=10, sticky="nsew")
+            ).grid(row=r, column=c, padx=10, pady=10, sticky="nsew")
+        
         btn_frame.grid_columnconfigure((0, 1), weight=1)
-
-    def render_unisoc(self):
-        container = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        container.pack(fill="both", expand=True, padx=20, pady=20)
-        ctk.CTkLabel(
-            container,
-            text="UNISOC PRO ENGINE",
-            font=("Roboto", 18, "bold"),
-            text_color="#9B59B6",
-        ).pack(pady=10)
-
-        ops = [
-            ("Read Info", "info"),
-            ("Factory Reset", "reset"),
-            ("Erase FRP", "frp"),
-            ("Unlock BL", "unlock"),
-        ]
-        for text, cmd in ops:
-            ctk.CTkButton(
-                container,
-                text=text,
-                height=50,
-                fg_color="#9B59B6",
-                command=lambda c=cmd: self.bridge.run_unisoc_command(c),
-            ).pack(pady=10, padx=50, fill="x")
 
     def render_penumbra(self):
         container = ctk.CTkFrame(self.content_area, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=20)
         ctk.CTkLabel(
             container,
-            text="XIAOMI PENUMBRA ENGINE",
+            text="PENUMBRA XIAOMI ENGINE",
             font=("Roboto", 18, "bold"),
             text_color="#E74C3C",
         ).pack(pady=10)
 
         ops = [
-            ("Bypass Mi Cloud", "bypass"),
-            ("Anti-Relock", "antirelock"),
-            ("Sideload FRP", "sideload_frp"),
-            ("Flash Fastboot", "flash"),
+            ("☁️ Bypass Mi Cloud", "bypass"),
+            ("🔓 FRP Xiaomi", "frp"),
+            ("🛠️ Fix Recovery Loop", "fix_recovery"),
+            ("📲 Flash Fastboot", "flash"),
         ]
         for text, cmd in ops:
             ctk.CTkButton(
                 container,
                 text=text,
                 height=50,
-                fg_color="#E74C3C",
+                fg_color="#C0392B",
                 command=lambda c=cmd: self.bridge.run_xiaomi_command(c),
+            ).pack(pady=10, padx=50, fill="x")
+
+    def render_unisoc(self):
+        container = ctk.CTkFrame(self.content_area, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=20, pady=20)
+        ctk.CTkLabel(
+            container,
+            text="UNISOC TIGER ENGINE",
+            font=("Roboto", 18, "bold"),
+            text_color="#9B59B6",
+        ).pack(pady=10)
+
+        ops = [
+            ("🔓 FRP Reset (SPD)", "frp"),
+            ("🧹 Factory Reset", "reset"),
+            ("💾 Read Flash", "read"),
+            ("🔥 Write PAC", "write"),
+        ]
+        for text, cmd in ops:
+            ctk.CTkButton(
+                container,
+                text=text,
+                height=50,
+                fg_color="#8E44AD",
+                command=lambda c=cmd: self.bridge.run_unisoc_command(c),
             ).pack(pady=10, padx=50, fill="x")
 
     def render_adb(self):
         container = ctk.CTkFrame(self.content_area, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=20)
         ctk.CTkLabel(
-            container, text="ADB & FASTBOOT TOOLS", font=("Roboto", 18, "bold")
+            container,
+            text="ADB & FASTBOOT TOOLS",
+            font=("Roboto", 18, "bold"),
+            text_color="#2C3E50",
         ).pack(pady=10)
 
-        ctk.CTkButton(
-            container,
-            text="Reboot to Recovery",
-            command=lambda: self.bridge._execute_async(
-                [ADB_PATH, "reboot", "recovery"]
-            ),
-        ).pack(pady=5)
-        ctk.CTkButton(
-            container,
-            text="Reboot to Bootloader",
-            command=lambda: self.bridge._execute_async(
-                [ADB_PATH, "reboot", "bootloader"]
-            ),
-        ).pack(pady=5)
-        ctk.CTkButton(
-            container,
-            text="Open Device Manager",
-            fg_color="#333",
-            command=lambda: os.system("devmgmt.msc"),
-        ).pack(pady=20)
-
-    def browse_file(self, entry_widget):
-        from tkinter import filedialog
-
-        filename = filedialog.askopenfilename()
-        if filename:
-            entry_widget.delete(0, "end")
-            entry_widget.insert(0, filename)
-
-    def show_activation_screen(self, message):
-        self.title("TSP TOOL - Activation Required")
-        self.geometry("500x350")
-
-        container = ctk.CTkFrame(self, fg_color="#1A1A1A")
-        container.pack(fill="both", expand=True, padx=20, pady=20)
-
-        ctk.CTkLabel(
-            container, text="TSP TOOL v2.5", font=("Impact", 28), text_color="#3498DB"
-        ).pack(pady=20)
-        ctk.CTkLabel(
-            container,
-            text=f"HWID: {self.hwid}",
-            font=("Consolas", 12),
-            text_color="#AAA",
-        ).pack(pady=5)
-        ctk.CTkLabel(
-            container, text=message, font=("Roboto", 14), text_color="#E74C3C"
-        ).pack(pady=10)
-
-        key_entry = ctk.CTkEntry(
-            container,
-            placeholder_text="Enter Activation Key (3, 6, 12 Months)...",
-            width=350,
-            height=45,
-        )
-        key_entry.pack(pady=10)
-
-        def activate():
-            key = key_entry.get().strip()
-            success, msg = self.license_manager.activate_key(key)
-            if success:
-                tk.messagebox.showinfo("Success", msg)
-                self.destroy()
-                # Restart App or continue
-                os.execl(sys.executable, sys.executable, *sys.argv)
-            else:
-                tk.messagebox.showerror("Error", msg)
-
-        ctk.CTkButton(
-            container,
-            text="ACTIVATE NOW",
-            height=45,
-            fg_color="#27AE60",
-            command=activate,
-        ).pack(pady=20)
-        ctk.CTkLabel(
-            container,
-            text="Contact @Admin on Telegram for Keys",
-            font=("Roboto", 10),
-            text_color="#555",
-        ).pack(side="bottom", pady=10)
+        ops = [
+            ("ℹ️ Read Info (ADB)", "adb_info"),
+            ("🔄 Reboot to EDL", "reboot_edl"),
+            ("🔄 Reboot to Download", "reboot_download"),
+            ("🔓 OEM Unlock", "oem_unlock"),
+        ]
+        for text, cmd in ops:
+            ctk.CTkButton(
+                container,
+                text=text,
+                height=50,
+                fg_color="#34495E",
+                command=lambda c=cmd: self.bridge.run_adb_command(c),
+            ).pack(pady=10, padx=50, fill="x")
 
     def render_settings(self):
         ctk.CTkLabel(
@@ -526,6 +452,13 @@ class TSPToolPro(ctk.CTk):
             fg_color="#27AE60",
             command=self.install_drivers,
         ).pack(pady=20)
+        
+        ctk.CTkLabel(
+            self.content_area,
+            text="Contact @Admin on Telegram for Keys",
+            font=("Roboto", 10),
+            text_color="#555",
+        ).pack(side="bottom", pady=10)
 
     def install_drivers(self):
         self.log("Starting Drivers Installation...", "warning")
@@ -550,12 +483,48 @@ class TSPToolPro(ctk.CTk):
         self.log("Drivers installation completed.", "success")
 
     def check_for_updates(self):
-        current_version = "2.5"
-        latest_version = "2.5"
-        if float(latest_version) > float(current_version):
-            self.log(f"New version {latest_version} available!", "success")
+        self.log("Checking for updates...", "info")
+        update_data = self.update_manager.check_for_updates()
+        if update_data:
+            self.show_update_dialog(update_data)
         else:
-            self.log(f"Latest version ({current_version}) is installed.", "info")
+            self.log("Latest version is already installed.", "success")
+
+    def browse_file(self, entry):
+        from tkinter import filedialog
+        path = filedialog.askopenfilename()
+        if path:
+            entry.delete(0, "end")
+            entry.insert(0, path)
+
+    def show_activation_screen(self, status):
+        """إظهار شاشة التفعيل إذا لم يكن هناك اشتراك نشط"""
+        self.title("TSP TOOL PRO - Activation Required")
+        self.geometry("500x400")
+        
+        ctk.CTkLabel(self, text="TSP TOOL PRO", font=("Impact", 32), text_color="#E74C3C").pack(pady=20)
+        ctk.CTkLabel(self, text="Activation Required", font=("Roboto", 18)).pack(pady=10)
+        
+        hwid_frame = ctk.CTkFrame(self)
+        hwid_frame.pack(pady=10, padx=20, fill="x")
+        ctk.CTkLabel(hwid_frame, text=f"Your HWID: {self.hwid}", font=("Consolas", 10)).pack(pady=5)
+        
+        key_entry = ctk.CTkEntry(self, placeholder_text="Enter Activation Key...", width=300, height=40)
+        key_entry.pack(pady=20)
+        
+        def activate():
+            key = key_entry.get()
+            success, msg = self.license_manager.activate_key(key)
+            if success:
+                tk.messagebox.showinfo("Success", msg)
+                self.destroy()
+                # إعادة تشغيل الأداة بعد التفعيل
+                os.execv(sys.executable, ['python'] + sys.argv)
+            else:
+                tk.messagebox.showerror("Error", msg)
+
+        ctk.CTkButton(self, text="Activate Now", fg_color="#E74C3C", command=activate, height=40).pack(pady=10)
+        ctk.CTkLabel(self, text=f"Status: {status}", text_color="#AAA").pack(pady=10)
 
 
 if __name__ == "__main__":
