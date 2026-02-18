@@ -6,90 +6,130 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# --- CONFIGURATION ---
-# Replace with your actual Bot Token from @BotFather
-BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-ADMIN_ID = "YOUR_ADMIN_TELEGRAM_ID"  # Replace with your ID to restrict access
+# --- إعدادات البوت (Configuration) ---
 
-# --- DATA PERSISTENCE ---
+# 1. التوكن الخاص بك
+BOT_TOKEN = "8219574824:AAFI_VwEQTZ0spUd3fjJ0A89S-MoWMN8yxc"
+
+# 2. آيدي الأدمن (حسابك الشخصي للتحكم الكامل)
+ADMIN_ID = 7175591691  
+
+# --- قاعدة البيانات (حفظ المفاتيح والمستخدمين) ---
 DB_FILE = "tsp_bot_db.json"
 
 def load_db():
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r") as f:
-            return json.load(f)
+        try:
+            with open(DB_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {"keys": [], "users": {}, "logs": []}
     return {"keys": [], "users": {}, "logs": []}
 
 def save_db(data):
     with open(DB_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# --- KEY GENERATOR ---
+# --- مولد السيريلات (Key Generator) ---
 def generate_key(months):
+    # يولد مفتاح عشوائي مكون من أحرف وأرقام احترافي
     rand_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
-    return f"TSP-{months}-{rand_str}"
+    return f"TSP-{months}M-{rand_str}"
 
-# --- HANDLERS ---
+# --- معالجات الأوامر (Handlers) ---
+
+# أمر البداية /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if str(update.effective_user.id) != str(ADMIN_ID):
-        await update.message.reply_text("Welcome to TSP TOOL Support. Please contact @Admin for license.")
+    user_id = update.effective_user.id
+    
+    # التحقق من أن المستخدم هو الأدمن (أنت فقط)
+    if str(user_id) != str(ADMIN_ID):
+        await update.message.reply_text("⛔ عذراً، هذا البوت خاص بمدير أداة TSP TOOL PRO فقط.")
         return
 
+    # لوحة التحكم (أزرار تفاعلية)
     keyboard = [
-        [InlineKeyboardButton("Generate 3 Months Key", callback_query_data='gen_3')],
-        [InlineKeyboardButton("Generate 6 Months Key", callback_query_data='gen_6')],
-        [InlineKeyboardButton("Generate 1 Year Key", callback_query_data='gen_12')],
-        [InlineKeyboardButton("View Active Users", callback_query_data='view_users')],
-        [InlineKeyboardButton("View Logs", callback_query_data='view_logs')]
+        [InlineKeyboardButton("🔑 توليد مفتاح (3 شهور)", callback_query_data='gen_3')],
+        [InlineKeyboardButton("🔑 توليد مفتاح (6 شهور)", callback_query_data='gen_6')],
+        [InlineKeyboardButton("🔑 توليد مفتاح (سنة كاملة)", callback_query_data='gen_12')],
+        [InlineKeyboardButton("👥 عرض المستخدمين النشطين", callback_query_data='view_users')],
+        [InlineKeyboardButton("📜 سجل نشاط الأجهزة", callback_query_data='view_logs')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("TSP TOOL Admin Panel:", reply_markup=reply_markup)
+    
+    welcome_msg = (
+        f"👋 أهلاً بك في لوحة تحكم TSP TOOL PRO\n"
+        f"👤 معرف المدير: `{ADMIN_ID}`\n\n"
+        "🛠 **إدارة الاشتراكات والعمليات:**\n"
+        "اختر العملية التي تريد تنفيذها من القائمة أدناه:"
+    )
+    await update.message.reply_text(welcome_msg, reply_markup=reply_markup, parse_mode='Markdown')
 
+# معالج ضغط الأزرار
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
-    if str(update.effective_user.id) != str(ADMIN_ID): return
+    # حماية إضافية للأزرار للتأكد من المدير فقط
+    if str(update.effective_user.id) != str(ADMIN_ID):
+        return
 
     data = load_db()
     
+    # معالجة توليد المفاتيح (3، 6، 12 شهر)
     if query.data.startswith('gen_'):
         months = query.data.split('_')[1]
         new_key = generate_key(months)
-        data["keys"].append({"key": new_key, "months": months, "status": "unused"})
+        
+        # حفظ المفتاح في قاعدة البيانات كـ "غير مستخدم"
+        data["keys"].append({
+            "key": new_key, 
+            "months": months, 
+            "status": "unused", 
+            "created_at": "Today"
+        })
         save_db(data)
-        await query.edit_message_text(f"✅ New Key Generated ({months} Months):\n\n`{new_key}`", parse_mode='Markdown')
         
+        msg = (
+            f"✅ **تم توليد مفتاح تفعيل جديد!**\n\n"
+            f"🔑 الكود: `{new_key}`\n"
+            f"📅 المدة: {months} شهور\n\n"
+            f"_يمكنك الضغط على الكود لنسخه وإرساله للمشترك_"
+        )
+        await query.edit_message_text(msg, parse_mode='Markdown')
+        
+    # عرض المستخدمين واشتراكاتهم
     elif query.data == 'view_users':
-        users_str = "Active Users:\n"
-        for hwid, info in data["users"].items():
-            users_str += f"👤 HWID: {hwid} | Expiry: {info['expiry']}\n"
-        await query.edit_message_text(users_str if len(data["users"]) > 0 else "No active users yet.")
+        if not data["users"]:
+            await query.edit_message_text("📭 لا يوجد مستخدمين مسجلين حالياً.")
+        else:
+            users_str = "👥 **قائمة المستخدمين والاشتراكات:**\n\n"
+            for hwid, info in data["users"].items():
+                users_str += f"🔹 HWID: `{hwid}`\n📅 انتهاء: {info.get('expiry', 'غير محدد')}\n\n"
+            await query.edit_message_text(users_str, parse_mode='Markdown')
         
+    # عرض سجل العمليات التي تمت عبر الأداة
     elif query.data == 'view_logs':
-        logs_str = "Recent Activity:\n"
-        for log in data["logs"][-10:]: # Last 10 logs
-            logs_str += f"🕒 {log['time']} | {log['hwid']} | {log['action']}\n"
-        await query.edit_message_text(logs_str if len(data["logs"]) > 0 else "No activity logs yet.")
+        if not data["logs"]:
+            await query.edit_message_text("📭 سجل العمليات فارغ حالياً.")
+        else:
+            logs_str = "📜 **آخر نشاطات الأجهزة (Logs):**\n\n"
+            # عرض آخر 10 عمليات
+            for log in data["logs"][-10:]:
+                logs_str += f"🕒 {log.get('time', '')} | {log.get('hwid', '')} | {log.get('action', '')}\n"
+            await query.edit_message_text(logs_str)
 
-# --- API FOR TOOL INTEGRATION (Simulated via JSON for now) ---
-# In a real setup, this would be a Flask/FastAPI backend
-def record_tool_activity(hwid, action):
-    data = load_db()
-    from datetime import datetime
-    data["logs"].append({
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "hwid": hwid,
-        "action": action
-    })
-    save_db(data)
-
+# --- تشغيل البوت ---
 if __name__ == "__main__":
-    if BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
-        print("Please set your BOT_TOKEN in tsp_bot.py")
-    else:
-        app = Application.builder().token(BOT_TOKEN).build()
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(CallbackQueryHandler(button_handler))
-        print("TSP Admin Bot Started...")
-        app.run_polling()
+    print("🚀 TSP TOOL Server Bot is STARTING...")
+    
+    # بناء التطبيق باستخدام التوكن المحدث
+    app = Application.builder().token(BOT_TOKEN).build()
+    
+    # إضافة المعالجات (أوامر وأزرار)
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button_handler))
+    
+    # بدء التشغيل الفعلي
+    print(f"✅ Bot is Online for Admin: {ADMIN_ID}")
+    app.run_polling()
