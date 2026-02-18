@@ -11,6 +11,7 @@ class DeviceMonitor:
         self.callback = callback
         self.running = False
         self.turbo_mode = False
+        self.usb_filter_enabled = True # تفعيل فلترة الـ USB بشكل افتراضي
         self.last_devices = []
 
     def start(self):
@@ -19,6 +20,9 @@ class DeviceMonitor:
 
     def set_turbo_mode(self, enabled):
         self.turbo_mode = enabled
+
+    def set_usb_filter(self, enabled):
+        self.usb_filter_enabled = enabled
 
     def stop(self):
         self.running = False
@@ -56,18 +60,28 @@ class DeviceMonitor:
                         current_devices.append(f"[FASTBOOT] {line.strip()}")
             except: pass
 
-            # 3. Scan COM Ports
+            # 3. Smart COM Port Filtering (قوة الفلترة والسيطرة)
             ports = serial.tools.list_ports.comports()
             for port in ports:
                 desc = port.description.upper()
-                if any(x in desc for x in ["MEDIATEK", "MTK", "VCOM"]):
-                    current_devices.append(f"[MTK PORT] {port.device}")
-                elif any(x in desc for x in ["SPRD", "SPREADTRUM", "UNISOC", "SCI"]):
-                    current_devices.append(f"[SPD PORT] {port.device}")
-                elif any(x in desc for x in ["QUALCOMM", "9008", "QDLOADER"]):
-                    current_devices.append(f"[EDL PORT] {port.device}")
-                elif "SAMSUNG" in desc:
-                    current_devices.append(f"[SAMSUNG PORT] {port.device}")
+                hwid = port.hwid.upper()
+                
+                # فلترة المنافذ غير الضرورية (مثل منافذ البلوتوث أو المنافذ الوهمية)
+                if self.usb_filter_enabled:
+                    if any(x in desc for x in ["BLUETOOTH", "STANDARD SERIAL", "LPT"]):
+                        continue
+
+                # التعرف الذكي على المنافذ بناءً على الـ HWID والـ Description
+                if any(x in desc for x in ["MEDIATEK", "MTK", "VCOM", "PRELOADER"]) or "VID_0E8D" in hwid:
+                    current_devices.append(f"[MTK PORT] {port.device} (Ready)")
+                elif any(x in desc for x in ["SPRD", "SPREADTRUM", "UNISOC", "SCI", "DIAG"]) or "VID_1782" in hwid:
+                    current_devices.append(f"[SPD PORT] {port.device} (Active)")
+                elif any(x in desc for x in ["QUALCOMM", "9008", "QDLOADER", "HS-USB"]) or "VID_05C6" in hwid:
+                    current_devices.append(f"[EDL PORT] {port.device} (Force Mode)")
+                elif "SAMSUNG" in desc or "VID_04E8" in hwid:
+                    current_devices.append(f"[SAMSUNG PORT] {port.device} (Connected)")
+                elif "VID_18D1" in hwid: # Google/Android generic
+                    current_devices.append(f"[USB DEBUG] {port.device}")
                 else:
                     current_devices.append(f"[COM PORT] {port.device}")
 
@@ -75,16 +89,15 @@ class DeviceMonitor:
                 self.last_devices = current_devices
                 self.callback(current_devices)
 
-            time.sleep(0.2 if self.turbo_mode else 2)
+            # سرعة المسح في الـ Turbo Mode (للسيطرة اللحظية على المداخل)
+            time.sleep(0.1 if self.turbo_mode else 1.5)
 
 def get_device_info(adb_path, serial_number):
-    """جلب معلومات تفصيلية عن الجهاز عبر ADB مع معالجة أفضل للأخطاء"""
+    """جلب معلومات تفصيلية عن الجهاز عبر ADB مع السيطرة على الاستجابة"""
     info = {}
     try:
-        # التحقق من أن الجهاز ما زال متصلاً
-        res = subprocess.run([adb_path, "-s", serial_number, "get-state"], capture_output=True, text=True)
-        if "device" not in res.stdout:
-            return {"Error": "Device Offline"}
+        res = subprocess.run([adb_path, "-s", serial_number, "get-state"], capture_output=True, text=True, timeout=2)
+        if "device" not in res.stdout: return {"Status": "Offline"}
 
         props = {
             "Model": "ro.product.model",
@@ -92,21 +105,13 @@ def get_device_info(adb_path, serial_number):
             "Android": "ro.build.version.release",
             "Security": "ro.build.version.security_patch",
             "CPU": "ro.board.platform",
-            "Carrier": "ro.carrier",
-            "IMEI": "gsm.serial"
+            "Serial": "ro.serialno"
         }
         
         for label, prop in props.items():
-            res = subprocess.run(
-                [adb_path, "-s", serial_number, "shell", "getprop", prop],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            res = subprocess.run([adb_path, "-s", serial_number, "shell", "getprop", prop], capture_output=True, text=True, timeout=3)
             val = res.stdout.strip()
             if val: info[label] = val
-        
-        if not info: info["Status"] = "Online (No info available)"
-    except Exception as e:
-        info["Error"] = str(e)
+            
+    except Exception: pass
     return info

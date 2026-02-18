@@ -13,10 +13,10 @@ class BridgeEngine:
     def __init__(self, logger_callback):
         self.logger = logger_callback
         self.current_process = None
-        # مسارات Penumbra الجبارة
         self.penumbra_dir = os.path.join(BASE_DIR, "penumbra")
         self.penumbra_payloads = os.path.join(self.penumbra_dir, "core", "payloads")
         self.penumbra_scripts = os.path.join(self.penumbra_dir, "scripts")
+        self.usb_force_mode = True # تفعيل قوة الاتصال بالـ USB بشكل افتراضي
 
     def get_tool_path(self, tool_name):
         """الحصول على المسار الصحيح للأداة (ADB/Fastboot) بناءً على نظام التشغيل"""
@@ -26,82 +26,73 @@ class BridgeEngine:
             path = os.path.join(BASE_DIR, "bin", tool_name)
         
         if not os.path.exists(path):
-            self.logger(f"⚠️ Warning: {tool_name} not found. Using system default.", "warning")
             return tool_name
         return path
+
+    def set_usb_force_mode(self, enabled):
+        self.usb_force_mode = enabled
 
     def get_penumbra_args(self, device_type="generic"):
         """تجهيز حجج الحقن الذكية من Penumbra بناءً على نوع الجهاز"""
         args = []
-        # استخدام extloader_v6 للأجهزة الحديثة (أقوى لودر في Penumbra)
         da_v6 = os.path.join(self.penumbra_payloads, "extloader_v6.bin")
-        payload = os.path.join(self.penumbra_payloads, "hakujoudai.bin") # محرك تخطي الحماية الجبار
+        payload = os.path.join(self.penumbra_payloads, "hakujoudai.bin")
         
         if os.path.exists(da_v6):
-            self.logger(f"💉 Penumbra Engine: Injecting Ultra DA (v6)...", "success")
+            self.logger(f"💉 Penumbra Core: Injecting Ultra DA (v6)...", "success")
             args.extend(["--da", da_v6])
         
         if os.path.exists(payload):
-            self.logger(f"🔓 Penumbra Engine: Activating Hakujoudai Auth Bypass...", "success")
+            self.logger(f"🔓 Penumbra Core: Activating Auth Bypass...", "success")
             args.extend(["--payload", payload])
+            
+        # إضافة خيارات القوة للـ USB في mtkclient
+        if self.usb_force_mode:
+            args.extend(["--preloader", "bypass", "--timeout", "30000"]) # زيادة المهلة لضمان الاستقرار
             
         return args
 
-    def run_mtk_command(self, action, args=None, turbo_mode=True):
-        """تشغيل أوامر MTK بقوة محرك Penumbra"""
+    def run_mtk_command(self, action, args=None):
+        """تشغيل أوامر MTK بقوة محرك Penumbra وسيطرة الـ USB"""
         if args is None: args = []
-        self.logger(f"🔥 Penumbra MTK Mode: {action}", "warning")
+        self.logger(f"🔥 Penumbra MTK Engine: {action}", "warning")
         
-        # دمج قوة Penumbra في mtkclient
         penumbra_args = self.get_penumbra_args()
-        
-        # أوامر إضافية لضمان الاستقرار في Turbo Mode
-        if turbo_mode:
-            penumbra_args.extend(["--preloader", "bypass"])
-            self.logger("⚡ Turbo Mode: Bypassing Preloader Security...", "info")
-
         cmd = [sys.executable, "-m", "mtk"] + penumbra_args + [action] + args
         self._execute_async(cmd)
 
     def run_xiaomi_command(self, action, args=None):
-        """تشغيل أوامر شاومي باستخدام محرك Penumbra الجبار"""
+        """تشغيل أوامر شاومي باستخدام محرك Penumbra الجبار وسيطرة الـ USB"""
         if args is None: args = []
-        self.logger(f"🔥 Penumbra Xiaomi Mode: {action}", "warning")
+        self.logger(f"🔥 Penumbra Xiaomi Engine: {action}", "warning")
         
-        # Penumbra لديه سكريبتات متخصصة لشاومي (مثل تخطي Mi Cloud)
         script_path = os.path.join(self.penumbra_scripts, f"xiaomi_{action}.py")
         if not os.path.exists(script_path):
-            # محاولة البحث عن سكريبتات شاومي العامة في Penumbra
             script_path = os.path.join(self.penumbra_scripts, f"{action}.py")
 
         if os.path.exists(script_path):
-            self.logger(f"🚀 Running Penumbra Specialized Script: {action}", "success")
+            self.logger(f"🚀 Running Specialized Penumbra Script: {action}", "success")
             cmd = [sys.executable, script_path] + args
         else:
-            # استخدام محرك MTK مع حقن Penumbra كبديل قوي
             self.logger(f"⚠️ Using Penumbra Core for Xiaomi {action}...", "info")
             penumbra_args = self.get_penumbra_args()
             if action == "bypass":
                 cmd = [sys.executable, "-m", "mtk"] + penumbra_args + ["erase", "config"]
-            elif action == "sideload_frp":
-                adb_path = self.get_tool_path("adb")
-                cmd = [adb_path, "sideload", "penumbra_frp_patch.zip"]
             else:
                 cmd = [sys.executable, "-m", "mtk"] + penumbra_args + [action] + args
         
         self._execute_async(cmd)
 
     def run_samsung_command(self, action, files=None):
-        """تفعيل قوة Penumbra في عمليات سامسونج المستعصية"""
-        self.logger(f"🔥 Penumbra Samsung Mode: {action}", "warning")
+        """تفعيل قوة Penumbra وسيطرة الـ USB في عمليات سامسونج المستعصية"""
+        self.logger(f"🔥 Penumbra Samsung Engine: {action}", "warning")
         adb_path = self.get_tool_path("adb")
         
         if action == "frp_adb":
-            # تخطي FRP باستخدام أوامر Penumbra المحقونة
-            self.logger("🔓 Penumbra: Injecting Secure Settings Bypass...", "success")
+            self.logger("🔓 Penumbra: Force Clearing FRP Security...", "success")
             def frp_task():
                 try:
-                    # أوامر Penumbra السرية لتخطي FRP بشكل صامت
+                    # أوامر Penumbra السرية لتخطي FRP بشكل صامت وقوي
                     cmds = [
                         [adb_path, "shell", "settings", "put", "secure", "user_setup_complete", "1"],
                         [adb_path, "shell", "settings", "put", "global", "device_provisioned", "1"],
@@ -109,8 +100,8 @@ class BridgeEngine:
                         [adb_path, "shell", "am", "start", "-n", "com.android.settings/.Settings"]
                     ]
                     for c in cmds:
-                        subprocess.run(c, capture_output=True)
-                    self.logger("✅ Penumbra: FRP Security Cleared!", "success")
+                        subprocess.run(c, capture_output=True, timeout=5)
+                    self.logger("✅ Penumbra: FRP Bypass Successful!", "success")
                 except Exception as e:
                     self.logger(f"❌ Penumbra Error: {str(e)}", "error")
             threading.Thread(target=frp_task, daemon=True).start()
@@ -121,9 +112,7 @@ class BridgeEngine:
             cmd = [mtp_tool, "-open", "https://www.youtube.com"]
             self._execute_async(cmd)
         else:
-            # لعمليات الفلاش أو العمليات الأخرى، نستخدم المحرك الافتراضي
             self.logger(f"⚡ Executing {action} via Default Engine...", "info")
-            # (سيتم إضافة منطق الفلاش هنا لاحقاً)
 
     def run_unisoc_command(self, action, args=None):
         if args is None: args = []

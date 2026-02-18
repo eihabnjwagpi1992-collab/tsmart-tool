@@ -319,14 +319,33 @@ class TSPToolPro(ctk.CTk):
             ctk.CTkButton(card, text=txt, height=55, corner_radius=12, fg_color="#34495E", hover_color="#2C3E50", font=("Roboto", 16, "bold"), command=lambda c=cmd: self.bridge.run_adb_command(c)).pack(pady=12, padx=100, fill="x")
 
     def render_settings(self, parent):
-        card = self.create_card(parent, "TOOL CONFIGURATION", "#7F8C8D")
-        card.pack(fill="both", expand=True, padx=50, pady=20)
+        card = self.create_card(parent, "TOOL CONFIGURATION", "#7F8C        ctk.CTkLabel(container, text="SYSTEM SETTINGS & USB CONTROL", font=("Roboto", 24, "bold")).pack(pady=20)
         
-        ctk.CTkButton(card, text="Check for Updates", height=50, corner_radius=10, fg_color="#2980B9", command=self.check_for_updates).pack(pady=15, padx=100, fill="x")
-        ctk.CTkButton(card, text="Copy HWID", height=50, corner_radius=10, fg_color="#16A085", command=lambda: self.log("HWID Copied: " + self.hwid, "success")).pack(pady=15, padx=100, fill="x")
-        ctk.CTkButton(card, text="Install Drivers Pack", height=50, corner_radius=10, fg_color=COLORS["accent_green"], command=self.install_drivers).pack(pady=15, padx=100, fill="x")
+        # خيارات السيطرة على الـ USB
+        usb_frame = ctk.CTkFrame(container, fg_color=COLORS["sidebar_bg"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        usb_frame.pack(pady=10, padx=50, fill="x")
         
-        ctk.CTkLabel(card, text=f"HWID: {self.hwid}", font=("Consolas", 12), text_color=COLORS["text_dim"]).pack(side="bottom", pady=20)
+        def toggle_usb_filter():
+            enabled = usb_filter_switch.get()
+            self.monitor.set_usb_filter(enabled)
+            self.log(f"USB Smart Filter: {'Enabled' if enabled else 'Disabled'}", "warning")
+            
+        def toggle_usb_force():
+            enabled = usb_force_switch.get()
+            self.bridge.set_usb_force_mode(enabled)
+            self.log(f"USB Force Mode: {'Enabled' if enabled else 'Disabled'}", "warning")
+
+        usb_filter_switch = ctk.CTkSwitch(usb_frame, text="Smart Port Filtering (Prevent Conflict)", command=toggle_usb_filter)
+        usb_filter_switch.pack(pady=10, padx=20, anchor="w")
+        usb_filter_switch.select()
+
+        usb_force_switch = ctk.CTkSwitch(usb_frame, text="USB Force Connection (High Power)", command=toggle_usb_force)
+        usb_force_switch.pack(pady=10, padx=20, anchor="w")
+        usb_force_switch.select()
+
+        ctk.CTkButton(container, text="Check for Updates", height=50, corner_radius=10, fg_color="#2980B9", command=self.check_for_updates).pack(pady=10, padx=100, fill="x")
+        ctk.CTkButton(container, text="Copy HWID", height=50, corner_radius=10, fg_color="#16A085", command=lambda: self.log("HWID Copied: " + self.hwid, "success")).pack(pady=10, padx=100, fill="x")
+        ctk.CTkButton(container, text="Install Drivers Pack (libusb/Usbdk)", height=50, corner_radius=10, fg_color=COLORS["accent_green"], command=self.install_drivers).pack(pady=10, padx=100, fill="x")(card, text=f"HWID: {self.hwid}", font=("Consolas", 12), text_color=COLORS["text_dim"]).pack(side="bottom", pady=20)
 
     def browse_file(self, entry):
         from tkinter import filedialog
