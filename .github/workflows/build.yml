@@ -1,4 +1,4 @@
-name: Build Tsmart Pro EXE (Win11 Stable)
+name: Build Tsmart Pro EXE (Stable CI)
 
 on: [push, workflow_dispatch]
 
@@ -23,7 +23,7 @@ jobs:
         pip install pyinstaller
         pip install -r requirements.txt
 
-    - name: Build Standalone EXE via Spec File
+    - name: Build Standalone EXE via Hardened Spec
       run: |
         pyinstaller --clean tsmart_pro.spec
 
