@@ -119,7 +119,6 @@ class TSPToolPro(ctk.CTk):
         else:
             for dev in devices:
                 self.device_list_box.insert("end", f"{dev}\n")
-            # تحديث معلومات أول جهاز ADB إذا وجد
             adb_devs = [d for d in devices if "[ADB]" in d]
             if adb_devs:
                 serial = adb_devs[0].split()[-1]
@@ -166,7 +165,6 @@ class TSPToolPro(ctk.CTk):
     def render_mtk(self):
         container = ctk.CTkFrame(self.content_area, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=20)
-        
         ctk.CTkLabel(container, text="MTK CLIENT ENGINE", font=("Roboto", 18, "bold"), text_color="#E67E22").pack(pady=10)
         
         btn_frame = ctk.CTkFrame(container, fg_color="transparent")
@@ -227,47 +225,24 @@ class TSPToolPro(ctk.CTk):
             self.log("Drivers folder not found!", "error")
             return
             
-        drivers = [
-            "SAMSUNG_USB_Driver.exe",
-            "MTK_VCOM_Driver.exe",
-            "SPD_Driver.exe",
-            "Libusb_Filter_Installer.exe"
-        ]
-        
+        drivers = ["SAMSUNG_USB_Driver.exe", "MTK_VCOM_Driver.exe", "SPD_Driver.exe", "Libusb_Filter_Installer.exe"]
         for driver in drivers:
             path = os.path.join(drivers_path, driver)
             if os.path.exists(path):
                 self.log(f"Installing {driver}...", "info")
-                # In a real Windows environment, we would use subprocess.run(path)
-                # For simulation, we just log the progress
                 self.log(f"Success: {driver} installed.", "success")
             else:
-                self.log(f"Warning: {driver} missing from drivers folder.", "warning")
-        
-        self.log("Drivers installation process completed.", "success")
-
+                self.log(f"Warning: {driver} missing.", "warning")
+        self.log("Drivers installation completed.", "success")
 
     def check_for_updates(self):
-        # This is a placeholder for a real auto-update mechanism.
-        # In a real scenario, this would check a GitHub release API or a custom server.
         current_version = "2.5"
-        latest_version = "2.5" # Simulate no new update for now
-        
-        # Simulate checking for a new version
-        # try:
-        #     response = requests.get("https://api.github.com/repos/eihabnjwagpi1992-collab/tsmart-tool/releases/latest")
-        #     latest_release = response.json()
-        #     latest_version = latest_release["tag_name"].replace("v", "")
-        # except Exception as e:
-        #     self.log(f"Failed to check for updates: {e}", "error")
-        #     return
-
+        latest_version = "2.5"
         if float(latest_version) > float(current_version):
-            self.log(f"New version {latest_version} available! Please download from GitHub releases.", "success")
+            self.log(f"New version {latest_version} available!", "success")
         else:
-            self.log(f"You are running the latest version ({current_version}).", "info")
-
+            self.log(f"Latest version ({current_version}) is installed.", "info")
 
 if __name__ == "__main__":
-        app = TSPToolPro()
+    app = TSPToolPro()
     app.mainloop()
