@@ -1,11 +1,8 @@
 import os
 import subprocess
-
 import threading
 import time
-
 import serial.tools.list_ports
-
 
 class DeviceMonitor:
     def __init__(self, adb_path, fastboot_path, callback):
@@ -40,10 +37,10 @@ class DeviceMonitor:
                 )
                 lines = res.stdout.strip().split("\n")[1:]
                 for line in lines:
-                    if line.strip():
-                        current_devices.append(f"[ADB] {line.strip()}")
-            except:
-                pass
+                    if "device" in line:
+                        serial = line.split()[0]
+                        current_devices.append(f"[ADB] {serial}")
+            except: pass
 
             # 2. Scan Fastboot Devices
             try:
@@ -57,62 +54,59 @@ class DeviceMonitor:
                 for line in lines:
                     if line.strip():
                         current_devices.append(f"[FASTBOOT] {line.strip()}")
-            except:
-                pass
+            except: pass
 
-            # 3. Scan COM Ports (MTK, SPD, Qualcomm)
+            # 3. Scan COM Ports
             ports = serial.tools.list_ports.comports()
             for port in ports:
                 desc = port.description.upper()
-                if "MEDIATEK" in desc or "MTK" in desc:
-                    current_devices.append(
-                        f"[MTK PORT] {port.device} ({port.description})"
-                    )
-                elif "SPRD" in desc or "SPREADTRUM" in desc or "UNISOC" in desc:
-                    current_devices.append(
-                        f"[SPD PORT] {port.device} ({port.description})"
-                    )
-                elif "QUALCOMM" in desc or "9008" in desc:
-                    current_devices.append(
-                        f"[EDL PORT] {port.device} ({port.description})"
-                    )
+                if any(x in desc for x in ["MEDIATEK", "MTK", "VCOM"]):
+                    current_devices.append(f"[MTK PORT] {port.device}")
+                elif any(x in desc for x in ["SPRD", "SPREADTRUM", "UNISOC", "SCI"]):
+                    current_devices.append(f"[SPD PORT] {port.device}")
+                elif any(x in desc for x in ["QUALCOMM", "9008", "QDLOADER"]):
+                    current_devices.append(f"[EDL PORT] {port.device}")
                 elif "SAMSUNG" in desc:
-                    current_devices.append(
-                        f"[SAMSUNG PORT] {port.device} ({port.description})"
-                    )
+                    current_devices.append(f"[SAMSUNG PORT] {port.device}")
                 else:
-                    current_devices.append(
-                        f"[COM PORT] {port.device} ({port.description})"
-                    )
+                    current_devices.append(f"[COM PORT] {port.device}")
 
             if current_devices != self.last_devices:
                 self.last_devices = current_devices
                 self.callback(current_devices)
 
-            # Turbo Mode: Scan every 100ms for fast-switching devices (Samsung BROM)
-            # Normal Mode: Scan every 2s to save CPU
-            time.sleep(0.1 if self.turbo_mode else 2)
-
+            time.sleep(0.2 if self.turbo_mode else 2)
 
 def get_device_info(adb_path, serial_number):
-    """جلب معلومات تفصيلية عن الجهاز عبر ADB"""
+    """جلب معلومات تفصيلية عن الجهاز عبر ADB مع معالجة أفضل للأخطاء"""
     info = {}
     try:
-        # مثال لجلب الموديل وإصدار الأندرويد
-        cmds = {
+        # التحقق من أن الجهاز ما زال متصلاً
+        res = subprocess.run([adb_path, "-s", serial_number, "get-state"], capture_output=True, text=True)
+        if "device" not in res.stdout:
+            return {"Error": "Device Offline"}
+
+        props = {
             "Model": "ro.product.model",
             "Brand": "ro.product.brand",
             "Android": "ro.build.version.release",
-            "Security Patch": "ro.build.version.security_patch",
+            "Security": "ro.build.version.security_patch",
             "CPU": "ro.board.platform",
+            "Carrier": "ro.carrier",
+            "IMEI": "gsm.serial"
         }
-        for label, prop in cmds.items():
+        
+        for label, prop in props.items():
             res = subprocess.run(
                 [adb_path, "-s", serial_number, "shell", "getprop", prop],
                 capture_output=True,
                 text=True,
+                timeout=5
             )
-            info[label] = res.stdout.strip()
-    except:
-        pass
+            val = res.stdout.strip()
+            if val: info[label] = val
+        
+        if not info: info["Status"] = "Online (No info available)"
+    except Exception as e:
+        info["Error"] = str(e)
     return info
