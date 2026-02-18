@@ -9,8 +9,6 @@ jobs:
     - name: Checkout Code with Submodules
       uses: actions/checkout@v4
       with:
-        # هذا السطر هو الحل لمشكلة الـ Exit Code 128 
-        # بيخلي السيرفر يسحب كود Penumbra كامل
         submodules: recursive
         fetch-depth: 0
 
@@ -22,25 +20,15 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller  # التأكد من وجود أداة البناء
+        pip install pyinstaller
         pip install -r requirements.txt
 
-    - name: Build Standalone EXE
-      # استخدمنا الـ ` لتقسيم الأسطر في PowerShell لضمان استقرار البناء على ويندوز
+    - name: Build Standalone EXE via Spec File
       run: |
-        pyinstaller --onefile --windowed `
-          --add-data "mtkclient;mtkclient" `
-          --add-data "unisoc;unisoc" `
-          --add-data "penumbra;penumbra" `
-          --add-data "bin;bin" `
-          --collect-all customtkinter `
-          --name "Tsmart_Pro_Tool_v2.5" `
-          --hidden-import="usb.backend.libusb1" `
-          --hidden-import="serial" `
-          main.py
+        pyinstaller --clean tsmart_pro.spec
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Tsmart_Pro_Win11_Stable
-        path: dist/Tsmart_Pro_Tool_v2.5.exe
+        path: dist/Tsmart_Pro_Tool_v3.2.exe
