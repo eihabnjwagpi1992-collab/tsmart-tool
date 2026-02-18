@@ -5,8 +5,17 @@ from datetime import datetime
 import traceback
 import subprocess
 import threading
+import ctypes # لإضافة التوافق مع ويندوز 10
 
 import customtkinter as ctk
+
+# --- WINDOWS 10 COMPATIBILITY PATCH ---
+try:
+    if os.name == 'nt':
+        # تفعيل الـ High DPI لضمان وضوح الأداة على ويندوز 10 و 11
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+except Exception:
+    pass
 
 from bridge_engine import BridgeEngine
 from device_engine import DeviceMonitor, get_device_info
@@ -68,6 +77,11 @@ class TSPToolPro(ctk.CTk):
             self.title("TSP TOOL PRO - Penumbra Powered Suite v3.1")
             self.geometry("1350x880")
             self.configure(fg_color=COLORS["bg_dark"])
+            
+            # تعيين أيقونة البرنامج في شريط المهام والنافذة
+            icon_file = resource_path(os.path.join("mtkclient", "icon.ico"))
+            if os.path.exists(icon_file):
+                self.iconbitmap(icon_file)
 
             self.hwid = get_hwid()
             self.license_manager = TSPLicensing(self.hwid)
