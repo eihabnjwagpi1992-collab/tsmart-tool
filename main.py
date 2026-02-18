@@ -65,7 +65,7 @@ class TSPToolPro(ctk.CTk):
         super().__init__()
 
         try:
-            self.title("TSP TOOL PRO - Professional GSM Suite v3.0")
+            self.title("TSP TOOL PRO - Penumbra Powered Suite v3.1")
             self.geometry("1350x880")
             self.configure(fg_color=COLORS["bg_dark"])
 
@@ -147,6 +147,7 @@ class TSPToolPro(ctk.CTk):
         self.sidebar.grid(row=0, column=0, sticky="nsew")
 
         ctk.CTkLabel(self.sidebar, text="TSP TOOL PRO", font=("Impact", 34), text_color=COLORS["accent_red"]).pack(pady=40)
+        ctk.CTkLabel(self.sidebar, text="PENUMBRA CORE ACTIVE", font=("Roboto", 10, "bold"), text_color=COLORS["accent_green"]).pack(pady=(0, 10))
 
         nav_items = [
             ("Samsung", COLORS["accent_blue"]),
@@ -251,7 +252,7 @@ class TSPToolPro(ctk.CTk):
     def render_samsung(self, parent):
         parent.grid_columnconfigure((0, 1), weight=1)
         
-        f_left = self.create_card(parent, "FLASH ENGINE", COLORS["accent_blue"])
+        f_left = self.create_card(parent, "PENUMBRA FLASH ENGINE", COLORS["accent_blue"])
         f_left.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
         for p in ["BL", "AP", "CP", "CSC"]:
@@ -264,7 +265,7 @@ class TSPToolPro(ctk.CTk):
 
         ctk.CTkButton(f_left, text="START FLASHING", height=55, corner_radius=10, fg_color=COLORS["accent_blue"], font=("Roboto", 16, "bold"), command=lambda: self.bridge.run_samsung_command("flash")).pack(pady=25, padx=20, fill="x")
 
-        f_right = self.create_card(parent, "SAMSUNG TOOLS", "#F1C40F")
+        f_right = self.create_card(parent, "PENUMBRA SAMSUNG TOOLS", "#F1C40F")
         f_right.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
         btns = [("Open MTP Browser", "mtp_browser"), ("Enable ADB (*#0*#)", "adb_enable"), ("Remove FRP (ADB)", "frp_adb"), ("Factory Reset", "reset")]
@@ -272,7 +273,7 @@ class TSPToolPro(ctk.CTk):
             ctk.CTkButton(f_right, text=txt, height=50, corner_radius=10, fg_color="#2C3E50", hover_color=COLORS["accent_blue"], font=("Roboto", 14), command=lambda c=cmd: self.bridge.run_samsung_command(c)).pack(pady=8, padx=25, fill="x")
 
     def render_mtk(self, parent):
-        card = self.create_card(parent, "MTK SERVICE MODULE", COLORS["accent_orange"])
+        card = self.create_card(parent, "PENUMBRA MTK ENGINE", COLORS["accent_orange"])
         card.pack(fill="both", expand=True, padx=50, pady=20)
         
         btns = [("Auth Bypass (BROM)", "bypass"), ("Erase FRP (Samsung/MTK)", "erase_frp"), ("Unlock Bootloader", "unlock_bl"), ("Format Userdata", "format")]
@@ -280,7 +281,7 @@ class TSPToolPro(ctk.CTk):
             ctk.CTkButton(card, text=txt, height=55, corner_radius=12, fg_color=COLORS["accent_orange"], hover_color="#D35400", font=("Roboto", 16, "bold"), command=lambda c=cmd: self.bridge.run_mtk_command(c)).pack(pady=12, padx=100, fill="x")
 
     def render_penumbra(self, parent):
-        card = self.create_card(parent, "XIAOMI PENUMBRA ENGINE", COLORS["accent_red"])
+        card = self.create_card(parent, "PENUMBRA XIAOMI ENGINE", COLORS["accent_red"])
         card.pack(fill="both", expand=True, padx=50, pady=20)
         
         btns = [("Mi Cloud Bypass (Anti-Relock)", "bypass"), ("Sideload FRP Remove", "sideload_frp"), ("Enable Diag Mode", "diag")]
