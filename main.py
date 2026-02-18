@@ -268,19 +268,25 @@ class TSPToolPro(ctk.CTk):
 
     def render_samsung(self, parent):
         parent.grid_columnconfigure((0, 1), weight=1)
+        self.odin_entries = {}
         
         f_left = self.create_card(parent, "PENUMBRA FLASH ENGINE", COLORS["accent_blue"])
         f_left.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-
+        
         for p in ["BL", "AP", "CP", "CSC"]:
             row = ctk.CTkFrame(f_left, fg_color="transparent")
             row.pack(fill="x", padx=20, pady=8)
             ctk.CTkLabel(row, text=p, width=45, font=("Roboto", 13, "bold")).pack(side="left")
             entry = ctk.CTkEntry(row, placeholder_text=f"Select {p} file...", height=40, corner_radius=8, border_color=COLORS["border"])
             entry.pack(side="left", fill="x", expand=True, padx=10)
+            self.odin_entries[p] = entry
             ctk.CTkButton(row, text="📁", width=45, height=40, corner_radius=8, fg_color=COLORS["accent_blue"], command=lambda e=entry: self.browse_file(e)).pack(side="right")
+            
+        def start_flash():
+            files = {p: e.get() for p, e in self.odin_entries.items() if e.get()}
+            self.bridge.run_samsung_command("flash", files)
 
-        ctk.CTkButton(f_left, text="START FLASHING", height=55, corner_radius=10, fg_color=COLORS["accent_blue"], font=("Roboto", 16, "bold"), command=lambda: self.bridge.run_samsung_command("flash")).pack(pady=25, padx=20, fill="x")
+        ctk.CTkButton(f_left, text="START FLASHING", height=55, corner_radius=10, fg_color=COLORS["accent_blue"], font=("Roboto", 16, "bold"), command=start_flash).pack(pady=25, padx=20, fill="x")
 
         f_right = self.create_card(parent, "PENUMBRA SAMSUNG TOOLS", "#F1C40F")
         f_right.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
