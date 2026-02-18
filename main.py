@@ -149,8 +149,9 @@ class TSPToolPro(ctk.CTk):
             row = ctk.CTkFrame(f_left, fg_color="transparent")
             row.pack(fill="x", padx=20, pady=5)
             ctk.CTkLabel(row, text=p, width=40).pack(side="left")
-            ctk.CTkEntry(row, placeholder_text=f"Select {p}...", height=35).pack(side="left", fill="x", expand=True, padx=5)
-            ctk.CTkButton(row, text="📁", width=40, height=35).pack(side="right")
+            entry = ctk.CTkEntry(row, placeholder_text=f"Select {p}...", height=35)
+            entry.pack(side="left", fill="x", expand=True, padx=5)
+            ctk.CTkButton(row, text="📁", width=40, height=35, command=lambda e=entry: self.browse_file(e)).pack(side="right")
             
         ctk.CTkButton(f_left, text="FLASH", height=50, fg_color="#0057B7", command=lambda: self.bridge.run_mtk_command("flash")).pack(pady=20, padx=20, fill="x")
 
@@ -210,6 +211,13 @@ class TSPToolPro(ctk.CTk):
         ctk.CTkButton(container, text="Reboot to Recovery", command=lambda: self.bridge._execute_async([ADB_PATH, "reboot", "recovery"])).pack(pady=5)
         ctk.CTkButton(container, text="Reboot to Bootloader", command=lambda: self.bridge._execute_async([ADB_PATH, "reboot", "bootloader"])).pack(pady=5)
         ctk.CTkButton(container, text="Open Device Manager", fg_color="#333", command=lambda: os.system("devmgmt.msc")).pack(pady=20)
+
+    def browse_file(self, entry_widget):
+        from tkinter import filedialog
+        filename = filedialog.askopenfilename()
+        if filename:
+            entry_widget.delete(0, "end")
+            entry_widget.insert(0, filename)
 
     def render_settings(self):
         ctk.CTkLabel(self.content_area, text="SETTINGS", font=("Roboto", 24, "bold")).pack(pady=20)
