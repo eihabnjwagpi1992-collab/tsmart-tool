@@ -1,10 +1,28 @@
+# --- GUI & Interface ---
 customtkinter
+Pillow
+colorama
+tqdm
+
+# --- Networking & API ---
 requests
-packaging
-pyinstaller
+json-rpc
+
+# --- Hardware & Protocols ---
 pyusb
 pyserial
+usb-protocol
+pywin32
+wmi
+
+# --- Security & Crypto ---
 pycryptodome
 cryptography
-json-rpc
-usb-protocol
+
+# --- MTK & Exploit Engines ---
+keystone-engine
+capstone
+
+# --- Build Tools ---
+packaging
+pyinstaller
