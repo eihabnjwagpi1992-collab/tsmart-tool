@@ -246,8 +246,7 @@ class TSPToolPro(ctk.CTk):
                 self.info_text.configure(text=info_str)
 
     def show_view(self, name):
-        # Reset nav buttons
-        for btn_name, btn in self.nav_buttons.items():
+        for btn in self.nav_buttons.values():
             btn.configure(fg_color="transparent", text_color=COLORS["text_dim"])
         self.nav_buttons[name].configure(fg_color=self.nav_buttons[name].cget("hover_color"), text_color="white")
 
@@ -323,7 +322,10 @@ class TSPToolPro(ctk.CTk):
             ctk.CTkButton(card, text=txt, height=55, corner_radius=12, fg_color="#34495E", hover_color="#2C3E50", font=("Roboto", 16, "bold"), command=lambda c=cmd: self.bridge.run_adb_command(c)).pack(pady=12, padx=100, fill="x")
 
     def render_settings(self, parent):
-        card = self.create_card(parent, "TOOL CONFIGURATION", "#7F8C        ctk.CTkLabel(container, text="SYSTEM SETTINGS & USB CONTROL", font=("Roboto", 24, "bold")).pack(pady=20)
+        container = self.create_card(parent, "TOOL CONFIGURATION", "#7F8C8D")
+        container.pack(fill="both", expand=True, padx=50, pady=20)
+        
+        ctk.CTkLabel(container, text="SYSTEM SETTINGS & USB CONTROL", font=("Roboto", 24, "bold")).pack(pady=20)
         
         # خيارات السيطرة على الـ USB
         usb_frame = ctk.CTkFrame(container, fg_color=COLORS["sidebar_bg"], corner_radius=10, border_width=1, border_color=COLORS["border"])
@@ -349,7 +351,9 @@ class TSPToolPro(ctk.CTk):
 
         ctk.CTkButton(container, text="Check for Updates", height=50, corner_radius=10, fg_color="#2980B9", command=self.check_for_updates).pack(pady=10, padx=100, fill="x")
         ctk.CTkButton(container, text="Copy HWID", height=50, corner_radius=10, fg_color="#16A085", command=lambda: self.log("HWID Copied: " + self.hwid, "success")).pack(pady=10, padx=100, fill="x")
-        ctk.CTkButton(container, text="Install Drivers Pack (libusb/Usbdk)", height=50, corner_radius=10, fg_color=COLORS["accent_green"], command=self.install_drivers).pack(pady=10, padx=100, fill="x")(card, text=f"HWID: {self.hwid}", font=("Consolas", 12), text_color=COLORS["text_dim"]).pack(side="bottom", pady=20)
+        ctk.CTkButton(container, text="Install Drivers Pack (libusb/Usbdk)", height=50, corner_radius=10, fg_color=COLORS["accent_green"], command=self.install_drivers).pack(pady=10, padx=100, fill="x")
+        
+        ctk.CTkLabel(container, text=f"HWID: {self.hwid}", font=("Consolas", 12), text_color=COLORS["text_dim"]).pack(side="bottom", pady=20)
 
     def browse_file(self, entry):
         from tkinter import filedialog
