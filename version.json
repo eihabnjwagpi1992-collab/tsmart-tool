@@ -1,5 +1,5 @@
 {
-    "version": "2.5.1",
+    "version": "2.7.0",
     "download_url": "https://github.com/eihabnjwagpi1992-collab/tsmart-tool/archive/refs/heads/main.zip",
-    "changelog": "- Added Turbo Mode for Samsung BROM.\n- Integrated Penumbra Smart DA Injection.\n- Fixed critical bugs in Telegram Bot.\n- Improved overall stability and speed."
+    "changelog": "- Fixed critical CustomTkinter resource missing error.\n- Improved restart logic after activation/update.\n- Updated HWID detection for Windows 11 compatibility.\n- Fixed redundant activation screen popup.\n- General stability and performance improvements."
 }

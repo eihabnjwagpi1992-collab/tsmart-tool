@@ -57,7 +57,7 @@ class TSPToolPro(ctk.CTk):
         super().__init__()
 
         try:
-            self.title("TSP TOOL PRO - Ultimate GSM Suite v2.5")
+            self.title("TSP TOOL PRO - Ultimate GSM Suite v2.6")
             self.geometry("1300x850")
 
             # License & HWID Check

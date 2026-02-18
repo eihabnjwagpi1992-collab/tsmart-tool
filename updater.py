@@ -9,7 +9,7 @@ import time
 from packaging import version
 
 # تعريف الإصدار الحالي (يتم تحديثه في كل نسخة جديدة)
-CURRENT_VERSION = "2.5.0"
+CURRENT_VERSION = "2.6.0"
 # رابط ملف الإصدار على GitHub (يجب تغييره لرابطك المباشر)
 VERSION_URL = "https://raw.githubusercontent.com/eihabnjwagpi1992-collab/tsmart-tool/main/version.json"
 
