@@ -23,6 +23,10 @@ FASTBOOT_PATH = resource_path(os.path.join("bin", "fastboot.exe"))
 MTK_EXE_PATH = resource_path(os.path.join("bin", "mtk.exe")) # Standalone MTK Binary
 SAMSUNG_EXE_PATH = resource_path(os.path.join("bin", "samsung_tool.exe")) # Standalone Samsung Binary
 
+# --- BINARY PATHS (إضافة المسارات الجديدة) ---
+UNISOC_EXE_PATH = resource_path(os.path.join("bin", "unisoc_tool.exe"))
+XIAOMI_EXE_PATH = resource_path(os.path.join("bin", "xiaomi_tool.exe"))
+
 # --- GLOBAL SETTINGS ---
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -109,7 +113,7 @@ class TsmartToolPro(ctk.CTk):
 
         self.show_view("Samsung")
 
-    # --- VIEW RENDERING ---
+    # --- VIEW RENDERING (تعديل دالة التنقل لتشمل التبويبات الجديدة) ---
     def show_view(self, name):
         for widget in self.content_area.winfo_children():
             if widget != self.log_frame:
@@ -118,7 +122,9 @@ class TsmartToolPro(ctk.CTk):
         if name == "Samsung": self.render_samsung()
         elif name == "MTK & Scatter": self.render_mtk()
         elif name == "Penumbra (Xiaomi)": self.render_penumbra()
+        elif name == "Unisoc Pro": self.render_unisoc() # <--- إضافة Unisoc
         elif name == "ADB / Fastboot": self.render_adb()
+        elif name == "Settings": self.render_settings()
 
     # 1. SAMSUNG TAB
     def render_samsung(self):
@@ -186,6 +192,91 @@ class TsmartToolPro(ctk.CTk):
                            command=lambda t=text: self.run_binary_task(MTK_EXE_PATH, [f"--{t.lower().replace(' ', '_')}"])).grid(row=0, column=i, padx=5, sticky="nsew")
         bot_frame.grid_columnconfigure((0,1,2,3), weight=1)
 
+    # 3. UNISOC PRO TAB (تبويب اليونيسوك الجديد)
+    def render_unisoc(self):
+        container = ctk.CTkFrame(self.content_area, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # قسم التفليش (Flash PAC)
+        flash_frame = ctk.CTkFrame(container, width=400, corner_radius=10, border_width=1, border_color="#333")
+        flash_frame.pack(side="left", fill="both", expand=True, padx=10)
+        ctk.CTkLabel(flash_frame, text="UNISOC FLASHER (PAC)", font=("Roboto", 16, "bold"), text_color="#9B59B6").pack(pady=10)
+        
+        f = ctk.CTkFrame(flash_frame, fg_color="transparent")
+        f.pack(fill="x", padx=20, pady=20)
+        ctk.CTkEntry(f, placeholder_text="Select .PAC Firmware...", height=35).pack(side="left", fill="x", expand=True, padx=5)
+        ctk.CTkButton(f, text="📁", width=40, height=35, fg_color="#333").pack(side="right")
+            
+        ctk.CTkButton(flash_frame, text="START FLASHING", height=50, fg_color="#9B59B6", font=("Roboto", 16, "bold"), 
+                       command=lambda: self.run_binary_task(UNISOC_EXE_PATH, ["--flash_pac"])).pack(pady=30, padx=20, fill="x")
+
+        # قسم الخدمات (Security)
+        service_frame = ctk.CTkFrame(container, width=400, corner_radius=10, border_width=1, border_color="#333")
+        service_frame.pack(side="right", fill="both", expand=True, padx=10)
+        ctk.CTkLabel(service_frame, text="SPD/UNISOC SERVICES", font=("Roboto", 16, "bold"), text_color="#F1C40F").pack(pady=10)
+        
+        btn_grid = ctk.CTkFrame(service_frame, fg_color="transparent")
+        btn_grid.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        services = [
+            ("Read Info (Diag)", "#2C3E50"), ("Factory Reset", "#E74C3C"),
+            ("Erase FRP", "#E67E22"), ("Remove Privacy ID", "#3498DB"),
+            ("Unlock Bootloader", "#C0392B"), ("Relock Bootloader", "#27AE60"),
+            ("IMEI Repair (Diag)", "#8E44AD"), ("Write NVRAM", "#2980B9")
+        ]
+        
+        for i, (text, color) in enumerate(services):
+            btn = ctk.CTkButton(btn_grid, text=text, fg_color=color, height=45, 
+                                 command=lambda t=text: self.run_binary_task(UNISOC_EXE_PATH, [f"--{t.lower().replace(' ', '_')}"]))
+            btn.grid(row=i//2, column=i%2, padx=5, pady=5, sticky="nsew")
+        btn_grid.grid_columnconfigure((0,1), weight=1)
+
+    # 4. PENUMBRA XIAOMI TAB (تطوير تبويب شاومي ليصبح احترافياً)
+    def render_penumbra(self):
+        container = ctk.CTkFrame(self.content_area, fg_color="transparent")
+        container.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # قسم الـ EDL & BROM
+        left_frame = ctk.CTkFrame(container, width=400, corner_radius=10, border_width=1, border_color="#333")
+        left_frame.pack(side="left", fill="both", expand=True, padx=10)
+        ctk.CTkLabel(left_frame, text="XIAOMI EDL / BROM", font=("Roboto", 16, "bold"), text_color="#E74C3C").pack(pady=10)
+        
+        ops_left = [
+            ("Bypass Mi Cloud", "#C0392B"), ("Erase FRP (EDL)", "#E67E22"),
+            ("Anti-Relock Fix", "#D35400"), ("Factory Reset (BROM)", "#7F8C8D"),
+            ("Auth Flash", "#2980B9"), ("Partition Manager", "#34495E")
+        ]
+        
+        for text, color in ops_left:
+            ctk.CTkButton(left_frame, text=text, fg_color=color, height=45, 
+                           command=lambda t=text: self.run_binary_task(XIAOMI_EXE_PATH, [f"--{t.lower().replace(' ', '_')}"])).pack(pady=5, padx=20, fill="x")
+
+        # قسم الـ Fastboot & Sideload
+        right_frame = ctk.CTkFrame(container, width=400, corner_radius=10, border_width=1, border_color="#333")
+        right_frame.pack(side="right", fill="both", expand=True, padx=10)
+        ctk.CTkLabel(right_frame, text="FASTBOOT / SIDELOAD", font=("Roboto", 16, "bold"), text_color="#3498DB").pack(pady=10)
+        
+        ops_right = [
+            ("Read Info (FB)", "#2C3E50"), ("Exit Fastboot", "#2C3E50"),
+            ("Unlock BL (Instant)", "#E74C3C"), ("Sideload FRP", "#27AE60"),
+            ("Cloud Bypass (Assistant)", "#2980B9"), ("Fix System Destroyed", "#C0392B")
+        ]
+        
+        for text, color in ops_right:
+            ctk.CTkButton(right_frame, text=text, fg_color=color, height=45, 
+                           command=lambda t=text: self.run_binary_task(XIAOMI_EXE_PATH, [f"--{t.lower().replace(' ', '_')}"])).pack(pady=5, padx=20, fill="x")
+
+    # تبويب الإعدادات (Settings) - لإكمال الواجهة
+    def render_settings(self):
+        ctk.CTkLabel(self.content_area, text="TOOL SETTINGS", font=("Roboto", 24, "bold")).pack(pady=20)
+        frame = ctk.CTkFrame(self.content_area, fg_color="#1E1E1E", width=600, height=400)
+        frame.pack(pady=20, padx=20)
+        
+        ctk.CTkSwitch(frame, text="Enable Auto-Update").pack(pady=10, padx=20)
+        ctk.CTkSwitch(frame, text="Save Logs Automatically").pack(pady=10, padx=20)
+        ctk.CTkButton(frame, text="Install USB Drivers", fg_color="#333").pack(pady=20, padx=20)
+        ctk.CTkLabel(frame, text="Developed by: Tsmart GSM Pro Team", text_color="#555").pack(pady=20)
+
     # --- CORE ENGINE FUNCTIONS ---
     def log(self, msg, level="info"):
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -235,16 +326,6 @@ class TsmartToolPro(ctk.CTk):
                 except: pass
                 time.sleep(3)
         threading.Thread(target=monitor, daemon=True).start()
-
-    def render_penumbra(self):
-        ctk.CTkLabel(self.content_area, text="PENUMBRA XIAOMI ENGINE", font=("Roboto", 24, "bold"), text_color="#E74C3C").pack(pady=20)
-        grid = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        grid.pack(expand=True, fill="both", padx=50)
-        
-        ops = ["Bypass Mi Cloud", "Remove FRP (Xiaomi)", "Fix System Update", "Disable Find Device", "Auth Flash (EDL)"]
-        for op in ops:
-            ctk.CTkButton(grid, text=op, height=50, fg_color="#E74C3C", font=("Roboto", 15, "bold"), 
-                           command=lambda o=op: self.run_binary_task(MTK_EXE_PATH, [f"--{o.lower().replace(' ', '_')}"])).pack(pady=5, fill="x")
 
     def render_adb(self):
         ctk.CTkLabel(self.content_area, text="Global ADB & Fastboot Tools", font=("Roboto", 22, "bold")).pack(pady=20)
