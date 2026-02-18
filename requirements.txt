@@ -1,31 +1,16 @@
-# --- GUI & Interface ---
 customtkinter
 Pillow
 colorama
 tqdm
-
-# --- Networking & API ---
 requests
 json-rpc
-
-# --- Hardware & Protocols ---
 pyusb
 pyserial
 usb-protocol
 pywin32
 wmi
-
-# --- Security & Crypto ---
 pycryptodome
 cryptography
-
-# --- MTK & Exploit Engines (Pre-compiled binaries) ---
-# keystone-engine  <-- Often fails on CI, better to include as binary
-# capstone         <-- Often fails on CI, better to include as binary
-
-# --- Build Tools ---
 packaging
 pyinstaller
-
-# Environment Configuration
 python-dotenv
