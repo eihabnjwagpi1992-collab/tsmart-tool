@@ -9,13 +9,24 @@ def get_hwid():
     try:
         # استخدام رقم لوحة الأم أو UUID النظام
         if os.name == "nt":
-            cmd = "wmic csproduct get uuid"
-            uuid = (
-                subprocess.check_output(cmd, shell=True).decode().split("\n")[1].strip()
-            )
+            # استخدام PowerShell بدلاً من wmic المهمل في Windows 11
+            try:
+                cmd = 'powershell -Command "Get-CimInstance -ClassName Win32_ComputerSystemProduct | Select-Object -ExpandProperty UUID"'
+                uuid = subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode().strip()
+            except:
+                # خطة احتياطية باستخدام wmic
+                try:
+                    cmd = "wmic csproduct get uuid"
+                    uuid = subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode().split("\n")[1].strip()
+                except:
+                    # خطة أخيرة باستخدام اسم الجهاز
+                    uuid = os.environ.get('COMPUTERNAME', 'UNKNOWN') + os.environ.get('USERNAME', 'USER')
         else:
-            # للينكس (لأغراض الاختبار في الساندبوكس)
-            uuid = os.popen("cat /etc/machine-id").read().strip()
+            # للينكس والماك
+            try:
+                uuid = open("/etc/machine-id").read().strip()
+            except:
+                uuid = subprocess.check_output(["hostname"]).decode().strip()
 
         return hashlib.sha256(uuid.encode()).hexdigest().upper()[:16]
     except:

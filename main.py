@@ -2,6 +2,8 @@ import os
 import sys
 import tkinter as tk
 from datetime import datetime
+import traceback
+import subprocess
 
 import customtkinter as ctk
 
@@ -14,16 +16,36 @@ from updater import UpdateManager
 
 # --- RESOURCE PATH FUNCTION ---
 def resource_path(relative_path):
+    """الحصول على المسار المطلق للموارد، يعمل مع PyInstaller و development mode"""
     try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
-    except Exception:
+    except AttributeError:
         base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+    
+    full_path = os.path.join(base_path, relative_path)
+    return full_path
+
+
+def restart_application():
+    """إعادة تشغيل البرنامج بشكل صحيح سواء كان .exe أو سكريبت"""
+    if getattr(sys, 'frozen', False):
+        # إذا كان ملف .exe مبني بواسطة PyInstaller
+        subprocess.Popen([sys.executable] + sys.argv)
+    else:
+        # إذا كان سكريبت Python عادي
+        subprocess.Popen([sys.executable] + sys.argv)
+    
+    sys.exit(0)
 
 
 # --- BINARY PATHS ---
-ADB_PATH = resource_path(os.path.join("bin", "adb.exe"))
-FASTBOOT_PATH = resource_path(os.path.join("bin", "fastboot.exe"))
+if os.name == 'nt':  # Windows
+    ADB_PATH = resource_path(os.path.join("bin", "adb.exe"))
+    FASTBOOT_PATH = resource_path(os.path.join("bin", "fastboot.exe"))
+else:  # Linux/Mac
+    ADB_PATH = resource_path(os.path.join("bin", "adb"))
+    FASTBOOT_PATH = resource_path(os.path.join("bin", "fastboot"))
 
 # --- GLOBAL SETTINGS ---
 ctk.set_appearance_mode("Dark")
@@ -34,32 +56,43 @@ class TSPToolPro(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("TSP TOOL PRO - Ultimate GSM Suite v2.5")
-        self.geometry("1300x850")
+        try:
+            self.title("TSP TOOL PRO - Ultimate GSM Suite v2.5")
+            self.geometry("1300x850")
 
-        # License & HWID Check
-        self.hwid = get_hwid()
-        self.license_manager = TSPLicensing(self.hwid)
+            # License & HWID Check
+            self.hwid = get_hwid()
+            self.license_manager = TSPLicensing(self.hwid)
 
-        is_active, status = self.license_manager.check_status()
-        if not is_active:
-            self.show_activation_screen(status)
-            return
+            is_active, status = self.license_manager.check_status()
+            if not is_active:
+                self.show_activation_screen(status)
+                return
 
-        self.bridge = BridgeEngine(self.log)
-        self.update_manager = UpdateManager(self.log)
-        self.setup_ui()
-        self.log(
-            f"Subscription Active: {status['key_type']} | Days Left: {status['days_left']}",
-            "success",
-        )
+            self.bridge = BridgeEngine(self.log)
+            self.update_manager = UpdateManager(self.log)
+            self.setup_ui()
+            self.log(
+                f"Subscription Active: {status['key_type']} | Days Left: {status['days_left']}",
+                "success",
+            )
 
-        # Start Device Monitor
-        self.monitor = DeviceMonitor(ADB_PATH, FASTBOOT_PATH, self.update_device_list)
-        self.monitor.start()
-        
-        # الفحص التلقائي للتحديثات عند بدء التشغيل
-        self.after(2000, self.check_for_updates_silent)
+            # Start Device Monitor
+            self.monitor = DeviceMonitor(ADB_PATH, FASTBOOT_PATH, self.update_device_list)
+            self.monitor.start()
+            
+            # الفحص التلقائي للتحديثات عند بدء التشغيل
+            self.after(2000, self.check_for_updates_silent)
+            
+        except Exception as e:
+            error_msg = f"Critical Error during initialization: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+            with open("crash_log.txt", "w") as f:
+                f.write(error_msg)
+            tk.messagebox.showerror(
+                "Initialization Error",
+                f"Failed to start TSP Tool PRO.\n\nError: {str(e)}\n\nCheck crash_log.txt for details."
+            )
+            sys.exit(1)
 
     def check_for_updates_silent(self):
         """الفحص الصامت للتحديثات دون إزعاج المستخدم إلا عند وجود جديد"""
@@ -499,6 +532,10 @@ class TSPToolPro(ctk.CTk):
 
     def show_activation_screen(self, status):
         """إظهار شاشة التفعيل إذا لم يكن هناك اشتراك نشط"""
+        if hasattr(self, '_activation_shown'):
+            return
+        self._activation_shown = True
+        
         self.title("TSP TOOL PRO - Activation Required")
         self.geometry("500x400")
         
@@ -518,8 +555,8 @@ class TSPToolPro(ctk.CTk):
             if success:
                 tk.messagebox.showinfo("Success", msg)
                 self.destroy()
-                # إعادة تشغيل الأداة بعد التفعيل
-                os.execv(sys.executable, ['python'] + sys.argv)
+                # إعادة تشغيل الأداة بعد التفعيل بشكل صحيح
+                restart_application()
             else:
                 tk.messagebox.showerror("Error", msg)
 
