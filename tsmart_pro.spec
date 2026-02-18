@@ -1,45 +1,43 @@
 # -*- mode: python ; coding: utf-8 -*-
-# TSmart Pro Tool - PyInstaller Spec File (v3.1.0)
-# هذا الملف يحل مشاكل البناء مع customtkinter والأيقونات
-
+# TSmart Pro Tool - Ultra Build Spec (v3.2.1)
 import os
 import sys
 from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
-# تحديد مسار الأيقونة الصحيح
-icon_path = os.path.join('mtkclient', 'icon.ico')
+# التحقق من وجود الأيقونة (استخدام المسار النسبي لضمان التوافق مع GitHub Actions)
+icon_name = "icon.ico"
+icon_source = os.path.join("mtkclient", icon_name)
+if not os.path.exists(icon_source):
+    icon_source = None
 
-# جمع جميع ملفات customtkinter
-customtkinter_datas, customtkinter_binaries, customtkinter_hiddenimports = collect_all('customtkinter')
+# جمع بيانات customtkinter بشكل آلي وشامل
+datas, binaries, hiddenimports = collect_all('customtkinter')
 
-# جمع ملفات الموارد الأصلية
-all_datas = [
+# إضافة الموارد الأساسية للمشروع
+all_datas = datas + [
     ('mtkclient', 'mtkclient'),
     ('unisoc', 'unisoc'),
     ('penumbra', 'penumbra'),
     ('bin', 'bin'),
     ('drivers', 'drivers'),
-    ('version.json', '.'),
-    (icon_path, '.') # دمج الأيقونة في المجلد الرئيسي للـ EXE
+    ('version.json', '.')
 ]
-all_datas += customtkinter_datas
 
-all_hiddenimports = [
-    'customtkinter',
-    'PIL._tkinter_finder',
+all_hiddenimports = hiddenimports + [
     'usb.backend.libusb1',
     'serial',
     'packaging',
     'packaging.version',
+    'PIL._tkinter_finder',
+    'wmi'
 ]
-all_hiddenimports += customtkinter_hiddenimports
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=binaries,
     datas=all_datas,
     hiddenimports=all_hiddenimports,
     hookspath=[],
@@ -61,7 +59,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Tsmart_Pro_Tool_v3.1',
+    name='Tsmart_Pro_Tool_v3.2',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -74,5 +72,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=icon_path, # تعيين الأيقونة للملف التنفيذي
+    icon=icon_source if icon_source else None,
 )
