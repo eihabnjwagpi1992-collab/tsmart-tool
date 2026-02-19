@@ -54,6 +54,7 @@ def resource_path(relative_path):
 
 
 def restart_application():
+    app.log("Attempting to restart application...", "warning")
     if getattr(sys, 'frozen', False):
         subprocess.Popen([sys.executable] + sys.argv)
     else:
@@ -128,10 +129,13 @@ class TSPToolPro(ctk.CTk):
         else: self.after(0, lambda: self.log("Latest version installed.", "success"))
 
     def show_update_dialog(self, data):
-        if self.update_window and self.update_window.winfo_exists():
-            self.update_window.focus(); return
+        if hasattr(self, 'update_window') and self.update_window and self.update_window.winfo_exists():
+            self.update_window.lift()
+            self.update_window.focus_force()
+            return
 
         self.update_window = ctk.CTkToplevel(self)
+        self.update_window.attributes("-topmost", True)
         self.update_window.title("Update Available")
         self.update_window.geometry("480x380")
         self.update_window.attributes("-topmost", True)
@@ -408,11 +412,14 @@ class TSPToolPro(ctk.CTk):
             else: self.log(f"Warning: {d} missing.", "warning")
 
     def show_activation_screen(self, status):
-        if self.activation_window and self.activation_window.winfo_exists():
-            self.activation_window.focus(); return
+        if hasattr(self, 'activation_window') and self.activation_window and self.activation_window.winfo_exists():
+            self.activation_window.lift()
+            self.activation_window.focus_force()
+            return
 
         self.withdraw()
         self.activation_window = ctk.CTkToplevel(self)
+        self.activation_window.attributes("-topmost", True)
         self.activation_window.title("TSP TOOL PRO - Activation")
         self.activation_window.geometry("550x450")
         self.activation_window.configure(fg_color=COLORS["bg_dark"])

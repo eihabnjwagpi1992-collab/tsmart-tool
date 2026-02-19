@@ -72,13 +72,12 @@ class BridgeEngine:
         if args is None: args = []
         self.logger(f"🔥 MTK Engine: {action}", "warning")
         
-        # استخدام mtk_main.py الموجود داخل Library كمدخل للمحرك
-        mtk_main = os.path.join(BASE_DIR, "mtkclient", "Library", "mtk_main.py")
+        mtk_main = os.path.join(BASE_DIR, "mtkclient", "mtk.py")
         if not os.path.exists(mtk_main):
-            # محاولة البحث عن أي مدخل آخر إذا لم يوجد
-            mtk_main = os.path.join(BASE_DIR, "mtkclient", "mtk.py")
+            mtk_main = os.path.join(BASE_DIR, "mtkclient", "Library", "mtk_main.py")
 
-        cmd = [sys.executable, mtk_main, action] + args
+        # استخدام -u لضمان عدم تخزين المخرجات في الذاكرة المؤقتة (Unbuffered)
+        cmd = [sys.executable, "-u", mtk_main, action] + args
         self._execute_async(cmd)
 
     def run_samsung_command(self, action, files=None):
@@ -121,30 +120,36 @@ class BridgeEngine:
         if not os.path.exists(unisoc_main):
             unisoc_main = os.path.join(BASE_DIR, "unisoc", "cli.py")
             
-        cmd = [sys.executable, unisoc_main, action] + args
+        cmd = [sys.executable, "-u", unisoc_main, action] + args
         self._execute_async(cmd)
 
     def _execute_async(self, cmd):
         def task():
             try:
                 cmd_str = [str(c) for c in cmd]
-                self.logger(f"Executing: {' '.join(cmd_str)}", "info")
-
+                
+                # تحسين التشغيل في بيئة PyInstaller لمنع فتح نوافذ جديدة
+                creation_flags = 0
                 startupinfo = None
+                
                 if os.name == 'nt':
+                    import ctypes
+                    creation_flags = 0x08000000  # CREATE_NO_WINDOW
                     startupinfo = subprocess.STARTUPINFO()
                     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                    startupinfo.wShowWindow = subprocess.SW_HIDE
+                    startupinfo.wShowWindow = 0  # SW_HIDE
 
                 self.current_process = subprocess.Popen(
                     cmd_str,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
+                    stdin=subprocess.PIPE, # منع الـ stdin من فتح نافذة كونسول
                     text=True,
                     bufsize=1,
                     universal_newlines=True,
                     startupinfo=startupinfo,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                    creationflags=creation_flags,
+                    env=os.environ.copy() # تمرير متغيرات البيئة لضمان استقرار المحركات
                 )
 
                 for line in self.current_process.stdout:
@@ -158,6 +163,7 @@ class BridgeEngine:
             except Exception as e:
                 self.logger(f"🛑 Error: {str(e)}", "error")
             finally:
+                self.logger(f"Finished async command: {' '.join(cmd_str)}", "info")
                 self.current_process = None
 
         if self.current_process and self.current_process.poll() is None:
