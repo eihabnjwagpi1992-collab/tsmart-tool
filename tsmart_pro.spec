@@ -89,5 +89,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=os.path.join('mtkclient', 'gui', 'images', 'logo_64.png') if os.path.exists(os.path.join('mtkclient', 'gui', 'images', 'logo_64.png')) else None,
-)
+    icon=\'logo.png\',
