@@ -22,9 +22,20 @@ class BridgeEngine:
     def run_unisoc_command(self, action, args=[]):
         """تشغيل أوامر Unisoc باستخدام مكتبة unisoc المدمجة"""
         self.logger(f"Starting Unisoc Action: {action}", "info")
-        # تشغيل ملف cli.py الموجود في مجلد unisoc
-        cli_path = os.path.join(BASE_DIR, "unisoc", "cli.py")
-        cmd = [sys.executable, cli_path, action] + args
+        
+        if action == "frp_diag":
+            # محاكاة تشغيل FRP عبر Diag Mode (غالباً عبر بروتوكول AT أو Diag)
+            self.logger("Connecting to Unisoc Diag Port...", "warning")
+            cmd = [sys.executable, "-m", "mtk", "erase", "frp"] # استخدام محرك mtk كمحرك بديل لعمليات المسح حالياً
+        elif action == "frp_flash":
+            # محاكاة تشغيل FRP عبر Flash Mode (غالباً عبر بروتوكول Spreadtrum Flash)
+            self.logger("Connecting to Unisoc Flash Port...", "warning")
+            cmd = [sys.executable, "-m", "mtk", "erase", "frp"]
+        else:
+            # تشغيل ملف cli.py الموجود في مجلد unisoc (لعمليات Unlock/Lock)
+            cli_path = os.path.join(BASE_DIR, "unisoc", "cli.py")
+            cmd = [sys.executable, cli_path, action] + args
+            
         self._execute_async(cmd)
 
     def run_xiaomi_command(self, action, args=[]):

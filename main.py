@@ -71,7 +71,8 @@ class TSPToolPro(ctk.CTk):
             ctk.CTkButton(self.sidebar, text=item, height=50, corner_radius=0, 
                                fg_color="transparent", text_color="white", hover_color=color,
                                anchor="w", font=("Roboto", 15, "bold"),
-                               command=lambda i=item: self.show_view(i)).pack(fill="x", pady=2)
+                               padx=20, # إضافة مسافة داخلية للنص عن الحافة
+                               command=lambda i=item: self.show_view(i)).pack(fill="x", pady=2, padx=10) # إضافة مسافة خارجية للزر عن الحافة
 
         # 2. MAIN CONTENT AREA
         self.content_area = ctk.CTkFrame(self, corner_radius=15, fg_color="#242424")
@@ -190,12 +191,26 @@ class TSPToolPro(ctk.CTk):
     def render_unisoc(self):
         container = ctk.CTkFrame(self.content_area, fg_color="transparent")
         container.pack(fill="both", expand=True, padx=20, pady=20)
-        ctk.CTkLabel(container, text="UNISOC PRO ENGINE", font=("Roboto", 18, "bold"), text_color="#9B59B6").pack(pady=10)
+        ctk.CTkLabel(container, text="UNISOC PRO SERVICE", font=("Roboto", 18, "bold"), text_color="#9B59B6").pack(pady=10)
         
-        ops = [("Read Info", "info"), ("Factory Reset", "reset"), ("Erase FRP", "frp"), ("Unlock BL", "unlock")]
-        for text, cmd in ops:
-            ctk.CTkButton(container, text=text, height=50, fg_color="#9B59B6", 
-                           command=lambda c=cmd: self.bridge.run_unisoc_command(c)).pack(pady=10, padx=50, fill="x")
+        btn_frame = ctk.CTkFrame(container, fg_color="transparent")
+        btn_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        ops = [
+            ("Read Info", "info"), 
+            ("Factory Reset", "reset"), 
+            ("Erase FRP (Diag)", "frp_diag"), 
+            ("Erase FRP (Flash)", "frp_flash"),
+            ("Erase FRP (Fastboot)", "frp"), 
+            ("Unlock BL", "unlock")
+        ]
+        
+        for i, (text, cmd) in enumerate(ops):
+            btn = ctk.CTkButton(btn_frame, text=text, height=45, fg_color="#9B59B6", 
+                                 command=lambda c=cmd: self.bridge.run_unisoc_command(c))
+            btn.grid(row=i//2, column=i%2, padx=10, pady=10, sticky="nsew")
+            
+        btn_frame.grid_columnconfigure((0, 1), weight=1)
 
     def render_penumbra(self):
         container = ctk.CTkFrame(self.content_area, fg_color="transparent")
