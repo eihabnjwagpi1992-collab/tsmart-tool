@@ -79,7 +79,7 @@ class TSPToolPro(ctk.CTk):
         super().__init__()
 
         try:
-            self.title("TSP TOOL PRO - Penumbra Powered Suite v3.1")
+            self.title("TSP TOOL - T SMART PRO")
             self.geometry("1350x880")
             self.configure(fg_color=COLORS["bg_dark"])
             
@@ -162,13 +162,15 @@ class TSPToolPro(ctk.CTk):
 
     def setup_ui(self):
         self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(2, weight=0) # Monitor panel fixed width
+        self.grid_rowconfigure(0, weight=0) # Top tabs fixed height
+        self.grid_rowconfigure(1, weight=1) # Main content area
 
         # 1. SIDEBAR
         self.sidebar = ctk.CTkFrame(self, width=240, corner_radius=0, fg_color=COLORS["sidebar_bg"])
-        self.sidebar.grid(row=0, column=0, sticky="nsew")
+        self.sidebar.grid(row=0, column=0, rowspan=2, sticky="nsew") # Sidebar spans two rows
 
-        ctk.CTkLabel(self.sidebar, text="TSP TOOL PRO", font=("Impact", 34), text_color=COLORS["accent_red"]).pack(pady=40)
+        ctk.CTkLabel(self.sidebar, text="TSMART PRO", font=("Impact", 34), text_color=COLORS["accent_orange"]).pack(pady=40)
         ctk.CTkLabel(self.sidebar, text="PENUMBRA CORE ACTIVE", font=("Roboto", 10, "bold"), text_color=COLORS["accent_green"]).pack(pady=(0, 10))
 
         nav_items = [
@@ -191,16 +193,36 @@ class TSPToolPro(ctk.CTk):
             btn.pack(fill="x", pady=2, padx=10) # مسافة خارجية للزر عن الحافة
             self.nav_buttons[item] = btn
 
-        # 2. MAIN CONTENT
-        self.main_container = ctk.CTkFrame(self, corner_radius=20, fg_color=COLORS["bg_dark"])
-        self.main_container.grid(row=0, column=1, sticky="nsew", padx=15, pady=15)
-        
-        self.content_area = ctk.CTkFrame(self.main_container, corner_radius=15, fg_color=COLORS["card_bg"], border_width=1, border_color=COLORS["border"])
-        self.content_area.pack(fill="both", expand=True, padx=5, pady=5)
+        # 2. TOP TABS FRAME
+        self.top_tabs_frame = ctk.CTkFrame(self, height=60, corner_radius=0, fg_color=COLORS["card_bg"])
+        self.top_tabs_frame.grid(row=0, column=1, sticky="new", padx=15, pady=(15, 0))
+        self.top_tabs_frame.grid_columnconfigure(0, weight=1) # Allow tabs to expand
 
-        # 3. RIGHT MONITOR
+        self.top_tab_buttons = {}
+        top_tab_items = ["Samsung", "MTK", "Penumbra", "Unisoc", "Xiaomi", "ACB", "Settings"]
+        for i, item in enumerate(top_tab_items):
+            btn = ctk.CTkButton(
+                self.top_tabs_frame, text=item, height=40, corner_radius=8, fg_color="transparent",
+                text_color=COLORS["text_main"], hover_color=COLORS["border"], font=("Roboto", 14, "bold"),
+                command=lambda i=item: self.show_view(i)
+            )
+            btn.grid(row=0, column=i, padx=5, pady=5, sticky="ew")
+            self.top_tab_buttons[item] = btn
+
+        # Add a placeholder for the right side of the top bar (e.g., user info, minimize/close buttons)
+        self.top_right_placeholder = ctk.CTkFrame(self.top_tabs_frame, fg_color="transparent")
+        self.top_right_placeholder.grid(row=0, column=len(top_tab_items), padx=5, pady=5, sticky="e")
+        self.top_tabs_frame.grid_columnconfigure(len(top_tab_items), weight=1) # Allow placeholder to expand
+
+        # 3. CENTRAL CONTENT AREA
+        self.central_content_frame = ctk.CTkFrame(self, corner_radius=15, fg_color=COLORS["card_bg"], border_width=1, border_color=COLORS["border"])
+        self.central_content_frame.grid(row=1, column=1, sticky="nsew", padx=15, pady=(0, 15))
+        self.central_content_frame.grid_rowconfigure(0, weight=1) # Content area inside central frame
+        self.central_content_frame.grid_columnconfigure(0, weight=1)
+
+        # 4. RIGHT MONITOR
         self.monitor_panel = ctk.CTkFrame(self, width=300, corner_radius=0, fg_color=COLORS["sidebar_bg"])
-        self.monitor_panel.grid(row=0, column=2, sticky="nsew")
+        self.monitor_panel.grid(row=0, column=2, rowspan=2, sticky="nsew") # Monitor panel spans two rows
 
         ctk.CTkLabel(self.monitor_panel, text="DEVICE MONITOR", font=("Roboto", 18, "bold"), text_color="#F1C40F").pack(pady=25)
 
@@ -213,237 +235,166 @@ class TSPToolPro(ctk.CTk):
         self.info_text = ctk.CTkLabel(self.info_panel, text="Waiting for device...", font=("Roboto", 12), text_color=COLORS["text_dim"], justify="left")
         self.info_text.pack(pady=15, padx=15)
 
-        # 4. LOG CONSOLE
-        self.log_frame = ctk.CTkFrame(self.content_area, height=200, fg_color="#080808", corner_radius=12, border_width=1, border_color=COLORS["border"])
+        # 5. LOG CONSOLE
+        self.log_frame = ctk.CTkFrame(self.central_content_frame, height=200, fg_color="#080808", corner_radius=12, border_width=1, border_color=COLORS["border"])
         self.log_frame.pack(side="bottom", fill="x", padx=15, pady=15)
 
         self.log_console = ctk.CTkTextbox(self.log_frame, fg_color="transparent", font=("Consolas", 12), text_color="#00FF00")
         self.log_console.pack(fill="both", expand=True, padx=10, pady=10)
+        self.log_console.configure(state="disabled") # Make log console read-only
 
-        self.log_console.tag_config("info", foreground="#00FF00")
-        self.log_console.tag_config("error", foreground="#FF4444")
-        self.log_console.tag_config("warning", foreground="#FFBB00")
-        self.log_console.tag_config("success", foreground="#00AAFF")
+        self.log_console.tag_config("info", foreground="#00AAFF") # Blue for info
+        self.log_console.tag_config("success", foreground="#2ECC71") # Green for success
+        self.log_console.tag_config("warning", foreground="#F1C40F") # Yellow for warning
+        self.log_console.tag_config("error", foreground="#E74C3C") # Red for error
 
         self.progress_bar = ctk.CTkProgressBar(self.log_frame, height=8, corner_radius=4, progress_color=COLORS["accent_blue"])
         self.progress_bar.pack(fill="x", padx=15, pady=(0, 10))
         self.progress_bar.set(0)
 
+        # Create a frame for the actual tab content within central_content_frame
+        self.tab_content_frame = ctk.CTkFrame(self.central_content_frame, corner_radius=15, fg_color=COLORS["card_bg"], border_width=1, border_color=COLORS["border"])
+        self.tab_content_frame.pack(fill="both", expand=True, padx=5, pady=(5, 0)) # Pack at top of central content frame
+
+        # Initial view setup
+        self.current_view_frame = ctk.CTkFrame(self.tab_content_frame, fg_color="transparent")
+        self.current_view_frame.pack(fill="both", expand=True)
+        self.current_view_frame.grid_columnconfigure(0, weight=1)
+        self.current_view_frame.grid_rowconfigure(0, weight=1)
+
+        # Initialize with Samsung view
         self.show_view("Samsung")
+
+    # --- VIEW LOADERS (PLACEHOLDERS FOR NOW) ---
+    def load_samsung_view(self):
+        # Odin Style Interface
+        samsung_frame = ctk.CTkFrame(self.current_view_frame, fg_color="transparent")
+        samsung_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        samsung_frame.grid_columnconfigure(0, weight=1)
+        samsung_frame.grid_rowconfigure(0, weight=0)
+        samsung_frame.grid_rowconfigure(1, weight=1)
+
+        # Top section for Odin Style label
+        odin_style_label = ctk.CTkLabel(samsung_frame, text="Odin Style", font=("Roboto", 24, "bold"), text_color=COLORS["text_main"])
+        odin_style_label.grid(row=0, column=0, pady=10, sticky="w")
+
+        # Main Odin Style content frame
+        odin_content_frame = ctk.CTkFrame(samsung_frame, fg_color=COLORS["card_bg"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        odin_content_frame.grid(row=1, column=0, sticky="nsew", pady=10)
+        odin_content_frame.grid_columnconfigure(1, weight=1) # Entry fields column
+
+        # File selection rows
+        file_labels = ["BL File:", "AP File:", "CP File:", "CSC File:", "PIT File:", "IMG File:"]
+        for i, label_text in enumerate(file_labels):
+            ctk.CTkLabel(odin_content_frame, text=label_text, font=("Roboto", 14), text_color=COLORS["text_dim"], anchor="w").grid(row=i, column=0, padx=10, pady=5, sticky="w")
+            ctk.CTkEntry(odin_content_frame, placeholder_text="Select file...", width=300, fg_color=COLORS["bg_dark"], border_color=COLORS["border"], text_color=COLORS["text_main"])
+.grid(row=i, column=1, padx=10, pady=5, sticky="ew")
+            ctk.CTkButton(odin_content_frame, text="Browse", width=80, fg_color=COLORS["accent_blue"], hover_color="#2980B9").grid(row=i, column=2, padx=10, pady=5)
+
+        # Device/Operation buttons
+        buttons_frame = ctk.CTkFrame(samsung_frame, fg_color="transparent")
+        buttons_frame.grid(row=2, column=0, sticky="ew", pady=10)
+        buttons_frame.grid_columnconfigure(0, weight=1)
+        buttons_frame.grid_columnconfigure(1, weight=1)
+        buttons_frame.grid_columnconfigure(2, weight=1)
+        buttons_frame.grid_columnconfigure(3, weight=1)
+
+        # Example buttons (as seen in image, roughly)
+        button_texts = [
+            "Device", "Read EFS", "Multi-Device", "DL-Port",
+            "FRP Service", "PID Service", "ADT Service", "SNP Service",
+            "Read Cert", "MTP Service", "Read Factory", "TDP Service",
+            "Raw Service", "NVM Service", "FSP Service", "Full Format"
+        ]
+
+        for i, text in enumerate(button_texts):
+            row = i // 4
+            col = i % 4
+            ctk.CTkButton(buttons_frame, text=text, fg_color=COLORS["card_bg"], text_color=COLORS["text_main"], hover_color=COLORS["border"], border_color=COLORS["border"], border_width=1, height=40)
+.grid(row=row, column=col, padx=5, pady=5, sticky="ew")
+
+        # Service button at the bottom
+        service_button = ctk.CTkButton(samsung_frame, text="Service", fg_color=COLORS["accent_blue"], hover_color="#2980B9", height=50, font=("Roboto", 16, "bold"))
+        service_button.grid(row=3, column=0, sticky="ew", pady=10)
+
+    def load_mtk_view(self):
+        ctk.CTkLabel(self.current_view_frame, text="MTK View Content", font=("Roboto", 20)).pack(pady=50)
+
+    def load_penumbra_view(self):
+        ctk.CTkLabel(self.current_view_frame, text="Penumbra (Xiaomi) View Content", font=("Roboto", 20)).pack(pady=50)
+
+    def load_unisoc_view(self):
+        ctk.CTkLabel(self.current_view_frame, text="Unisoc View Content", font=("Roboto", 20)).pack(pady=50)
+
+    def load_adb_fastboot_view(self):
+        ctk.CTkLabel(self.current_view_frame, text="ADB / Fastboot View Content", font=("Roboto", 20)).pack(pady=50)
+
+    def load_settings_view(self):
+        ctk.CTkLabel(self.current_view_frame, text="Settings View Content", font=("Roboto", 20)).pack(pady=50)
 
     def log(self, msg, level="info"):
         timestamp = datetime.now().strftime("%H:%M:%S")
+        self.log_console.configure(state="normal") # Enable writing
         self.log_console.insert("end", f"[{timestamp}] {msg}\n", level)
         self.log_console.see("end")
+        self.log_console.configure(state="disabled") # Disable writing
 
     def update_device_list(self, devices):
         self.device_list_box.delete("1.0", "end")
         if not devices:
-            self.device_list_box.insert("end", "Waiting for device...")
-            self.info_text.configure(text="No Device Connected")
+            self.device_list_box.insert("end", "No devices found...")
+            self.info_text.configure(text="Waiting for device...")
         else:
-            for dev in devices:
-                self.device_list_box.insert("end", f"{dev}\n")
+            for dev in devices: self.device_list_box.insert("end", f"▶ {dev}\n")
             adb_devs = [d for d in devices if "[ADB]" in d]
             if adb_devs:
                 serial = adb_devs[0].split()[-1]
                 info = get_device_info(ADB_PATH, serial)
-                info_str = "\n".join([f"{k}: {v}" for k, v in info.items()])
+                info_str = "\n".join([f"• {k}: {v}" for k, v in info.items()])
                 self.info_text.configure(text=info_str)
 
     def show_view(self, name):
-        if self.current_view_frame: self.current_view_frame.destroy()
-        
-        # Highlight active button
-        for btn_name, btn in self.nav_buttons.items():
-            if btn_name == name: btn.configure(fg_color=btn.cget("hover_color"), text_color="#FFFFFF")
-            else: btn.configure(fg_color="transparent", text_color=COLORS["text_dim"])
+        # Destroy current view
+        if self.current_view_frame:
+            for widget in self.current_view_frame.winfo_children():
+                widget.destroy()
+            self.current_view_frame.destroy()
 
-        self.current_view_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
+        # Create new view frame
+        self.current_view_frame = ctk.CTkFrame(self.tab_content_frame, fg_color="transparent")
         self.current_view_frame.pack(fill="both", expand=True)
-        
-        if name == "Samsung": self.render_samsung(self.current_view_frame)
-        elif name == "MTK & Scatter": self.render_mtk(self.current_view_frame)
-        elif name == "Penumbra (Xiaomi)": self.render_penumbra(self.current_view_frame)
-        elif name == "Unisoc Pro": self.render_unisoc(self.current_view_frame)
-        elif name == "ADB / Fastboot": self.render_adb(self.current_view_frame)
-        elif name == "Settings": self.render_settings(self.current_view_frame)
+        self.current_view_frame.grid_columnconfigure(0, weight=1)
+        self.current_view_frame.grid_rowconfigure(0, weight=1)
 
-    def create_card(self, parent, title, color):
-        card = ctk.CTkFrame(parent, fg_color="transparent")
-        ctk.CTkLabel(card, text=title, font=("Roboto", 26, "bold"), text_color=color).pack(pady=20)
-        return card
+        # Highlight selected sidebar button
+        for btn_name, btn_widget in self.nav_buttons.items():
+            if btn_name == name:
+                btn_widget.configure(fg_color=COLORS["card_bg"], text_color=COLORS["text_main"])
+            else:
+                btn_widget.configure(fg_color="transparent", text_color=COLORS["text_dim"])
 
-    def render_samsung(self, parent):
-        container = ctk.CTkFrame(parent, fg_color="transparent")
-        container.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        # Left side: Flash
-        f_left = ctk.CTkFrame(container, corner_radius=15, border_width=1, border_color=COLORS["border"], fg_color=COLORS["sidebar_bg"])
-        f_left.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-        ctk.CTkLabel(f_left, text="ODIN FLASH ENGINE", font=("Roboto", 18, "bold"), text_color=COLORS["accent_blue"]).pack(pady=15)
-        
-        for p in ["BL", "AP", "CP", "CSC"]:
-            row = ctk.CTkFrame(f_left, fg_color="transparent")
-            row.pack(fill="x", padx=20, pady=6)
-            ctk.CTkLabel(row, text=p, width=40, font=("Roboto", 12, "bold")).pack(side="left")
-            entry = ctk.CTkEntry(row, placeholder_text=f"Select {p} file...", height=40, border_color=COLORS["border"])
-            entry.pack(side="left", fill="x", expand=True, padx=8)
-            ctk.CTkButton(row, text="📁", width=45, height=40, fg_color="#333", hover_color="#444", command=lambda e=entry: self.browse_file(e)).pack(side="right")
-            
-        ctk.CTkButton(f_left, text="START FLASHING", height=55, corner_radius=12, fg_color=COLORS["accent_blue"], hover_color="#2980B9", font=("Roboto", 16, "bold"), command=lambda: self.bridge.run_mtk_command("flash")).pack(pady=30, padx=25, fill="x")
+        # Highlight selected top tab button
+        for btn_name, btn_widget in self.top_tab_buttons.items():
+            if btn_name == name:
+                btn_widget.configure(fg_color=COLORS["accent_blue"], text_color=COLORS["text_main"])
+            else:
+                btn_widget.configure(fg_color="transparent", text_color=COLORS["text_dim"])
 
-        # Right side: Services
-        f_right = ctk.CTkFrame(container, corner_radius=15, border_width=1, border_color=COLORS["border"], fg_color=COLORS["sidebar_bg"])
-        f_right.pack(side="right", fill="both", expand=True, padx=10, pady=10)
-        ctk.CTkLabel(f_right, text="SAMSUNG SERVICES", font=("Roboto", 18, "bold"), text_color=COLORS["accent_green"]).pack(pady=15)
-        
-        ops = [("FRP MTP (New 2024)", "frp_mtp"), ("FRP ADB Mode", "frp_adb"), ("CSC Change Tool", "csc"), ("Factory Reset", "reset"), ("Download Mode", "reboot_dl")]
-        for text, cmd in ops:
-            ctk.CTkButton(f_right, text=text, height=50, corner_radius=10, fg_color="#2C3E50", hover_color="#34495E", font=("Roboto", 14), command=lambda c=cmd: self.bridge.run_mtk_command(c)).pack(pady=6, padx=25, fill="x")
-
-    def render_mtk(self, parent):
-        card = self.create_card(parent, "MTK CLIENT ENGINE", COLORS["accent_orange"])
-        card.pack(fill="both", expand=True, padx=50, pady=20)
-        
-        btn_frame = ctk.CTkFrame(card, fg_color="transparent")
-        btn_frame.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        mtk_ops = [
-            ("Read GPT Info", "printgpt"), ("Erase FRP Lock", "erase frp"), 
-            ("Unlock Bootloader", "stage2 bootloader unlock"), ("Relock Bootloader", "stage2 bootloader lock"),
-            ("Safe Format Data", "erase userdata"), ("Dump Preloader", "r preloader preloader.bin"),
-            ("Bypass Auth", "payload"), ("Read Firmware", "rf firmware.bin")
-        ]
-        
-        for i, (text, cmd) in enumerate(mtk_ops):
-            btn = ctk.CTkButton(btn_frame, text=text, height=55, corner_radius=12, fg_color=COLORS["accent_orange"], hover_color="#D35400", font=("Roboto", 15, "bold"), 
-                                 command=lambda c=cmd: self.bridge.run_mtk_command(c.split()[0], c.split()[1:]))
-            btn.grid(row=i//2, column=i%2, padx=15, pady=15, sticky="nsew")
-        btn_frame.grid_columnconfigure((0,1), weight=1)
-
-    def render_penumbra(self, parent):
-        card = self.create_card(parent, "XIAOMI PENUMBRA CORE", COLORS["accent_red"])
-        card.pack(fill="both", expand=True, padx=50, pady=20)
-        
-        btns = [("Bypass Mi Cloud", "bypass"), ("Anti-Relock (Fix)", "antirelock"), ("Sideload FRP", "sideload_frp"), ("EDL Auth Flash", "edl_flash")]
-        for txt, cmd in btns:
-            ctk.CTkButton(card, text=txt, height=55, corner_radius=12, fg_color=COLORS["accent_red"], hover_color="#C0392B", font=("Roboto", 16, "bold"), command=lambda c=cmd: self.bridge.run_xiaomi_command(c)).pack(pady=12, padx=100, fill="x")
-
-    def render_unisoc(self, parent):
-        card = self.create_card(parent, "UNISOC PRO SERVICE", COLORS["accent_purple"])
-        card.pack(fill="both", expand=True, padx=50, pady=20)
-        
-        btn_frame = ctk.CTkFrame(card, fg_color="transparent")
-        btn_frame.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        ops = [
-            ("Read System Info", "info"), 
-            ("Factory Reset", "reset"), 
-            ("Erase FRP (Diag)", "frp_diag"), 
-            ("Erase FRP (Flash)", "frp_flash"),
-            ("Erase FRP (Fastboot)", "frp"), 
-            ("Unlock BL", "unlock")
-        ]
-        
-        for i, (text, cmd) in enumerate(ops):
-            btn = ctk.CTkButton(btn_frame, text=text, height=45, corner_radius=12, fg_color=COLORS["accent_purple"], hover_color="#8E44AD", font=("Roboto", 16, "bold"), 
-                                 command=lambda c=cmd: self.bridge.run_unisoc_command(c))
-            btn.grid(row=i//2, column=i%2, padx=10, pady=10, sticky="nsew")
-            
-        btn_frame.grid_columnconfigure((0, 1), weight=1)
-
-    def render_adb(self, parent):
-        card = self.create_card(parent, "ADB & FASTBOOT UTILS", "#2C3E50")
-        card.pack(fill="both", expand=True, padx=50, pady=20)
-        
-        btns = [("Reboot to Recovery", "adb_recovery"), ("Reboot to Bootloader", "adb_bl"), ("Get Fastboot Vars", "fb_vars"), ("Exit Fastboot", "fb_reboot")]
-        for txt, cmd in btns:
-            ctk.CTkButton(card, text=txt, height=55, corner_radius=12, fg_color="#34495E", hover_color="#2C3E50", font=("Roboto", 16, "bold"), command=lambda c=cmd: self.bridge.run_adb_command(c)).pack(pady=12, padx=100, fill="x")
-
-    def render_settings(self, parent):
-        container = self.create_card(parent, "TOOL CONFIGURATION", "#7F8C8D")
-        container.pack(fill="both", expand=True, padx=50, pady=20)
-        
-        ctk.CTkLabel(container, text="SYSTEM SETTINGS & USB CONTROL", font=("Roboto", 24, "bold")).pack(pady=20)
-        
-        # خيارات السيطرة على الـ USB
-        usb_frame = ctk.CTkFrame(container, fg_color=COLORS["sidebar_bg"], corner_radius=10, border_width=1, border_color=COLORS["border"])
-        usb_frame.pack(pady=10, padx=50, fill="x")
-        
-        def toggle_usb_filter():
-            enabled = usb_filter_switch.get()
-            self.monitor.set_usb_filter(enabled)
-            self.log(f"USB Smart Filter: {'Enabled' if enabled else 'Disabled'}", "warning")
-            
-        def toggle_usb_force():
-            enabled = usb_force_switch.get()
-            self.bridge.set_usb_force_mode(enabled)
-            self.log(f"USB Force Mode: {'Enabled' if enabled else 'Disabled'}", "warning")
-
-        usb_filter_switch = ctk.CTkSwitch(usb_frame, text="Smart Port Filtering (Prevent Conflict)", command=toggle_usb_filter)
-        usb_filter_switch.pack(pady=10, padx=20, anchor="w")
-        usb_filter_switch.select()
-
-        usb_force_switch = ctk.CTkSwitch(usb_frame, text="USB Force Connection (High Power)", command=toggle_usb_force)
-        usb_force_switch.pack(pady=10, padx=20, anchor="w")
-        usb_force_switch.select()
-
-        ctk.CTkButton(container, text="Check for Updates", height=50, corner_radius=10, fg_color="#2980B9", command=self.check_for_updates).pack(pady=10, padx=100, fill="x")
-        ctk.CTkButton(container, text="Copy HWID", height=50, corner_radius=10, fg_color="#16A085", command=lambda: self.log("HWID Copied: " + self.hwid, "success")).pack(pady=10, padx=100, fill="x")
-        ctk.CTkButton(container, text="Install Drivers Pack (libusb/Usbdk)", height=50, corner_radius=10, fg_color=COLORS["accent_green"], command=self.install_drivers).pack(pady=10, padx=100, fill="x")
-        
-        ctk.CTkLabel(container, text=f"HWID: {self.hwid}", font=("Consolas", 12), text_color=COLORS["text_dim"]).pack(side="bottom", pady=20)
-
-    def browse_file(self, entry):
-        from tkinter import filedialog
-        path = filedialog.askopenfilename()
-        if path: entry.delete(0, "end"); entry.insert(0, path)
-
-    def install_drivers(self):
-        self.log("Starting Drivers Installation...", "warning")
-        drivers_path = resource_path("drivers")
-        if not os.path.exists(drivers_path): self.log("Drivers folder not found!", "error"); return
-        
-        drivers = ["SAMSUNG_USB_Driver.exe", "MTK_VCOM_Driver.exe", "SPD_Driver.exe", "Libusb_Filter_Installer.exe"]
-        for d in drivers:
-            p = os.path.join(drivers_path, d)
-            if os.path.exists(p): self.log(f"Installing {d}...", "info"); subprocess.Popen(p, shell=True)
-            else: self.log(f"Warning: {d} missing.", "warning")
-
-    def show_activation_screen(self, status):
-        if hasattr(self, 'activation_window') and self.activation_window and self.activation_window.winfo_exists():
-            self.activation_window.lift()
-            self.activation_window.focus_force()
-            return
-
-        self.withdraw()
-        self.activation_window = ctk.CTkToplevel(self)
-        self.activation_window.attributes("-topmost", True)
-        self.activation_window.title("TSP TOOL PRO - Activation")
-        self.activation_window.geometry("550x450")
-        self.activation_window.configure(fg_color=COLORS["bg_dark"])
-        self.activation_window.protocol("WM_DELETE_WINDOW", sys.exit)
-        
-        win = self.activation_window
-        ctk.CTkLabel(win, text="TSP TOOL PRO", font=("Impact", 38), text_color=COLORS["accent_red"]).pack(pady=30)
-        ctk.CTkLabel(win, text="License Activation Required", font=("Roboto", 18, "bold")).pack(pady=10)
-        
-        hw_card = ctk.CTkFrame(win, corner_radius=12, fg_color=COLORS["sidebar_bg"], border_width=1, border_color=COLORS["border"])
-        hw_card.pack(pady=20, padx=40, fill="x")
-        ctk.CTkLabel(hw_card, text=f"HWID: {self.hwid}", font=("Consolas", 12), text_color=COLORS["accent_orange"]).pack(pady=10)
-        
-        key_entry = ctk.CTkEntry(win, placeholder_text="Paste your activation key here...", width=380, height=45, corner_radius=10, border_color=COLORS["border"])
-        key_entry.pack(pady=20)
-        
-        def activate():
-            k = key_entry.get()
-            s, m = self.license_manager.activate_key(k)
-            if s: tk.messagebox.showinfo("Success", m); self.activation_window.destroy(); restart_application()
-            else: tk.messagebox.showerror("Error", m)
-
-        ctk.CTkButton(win, text="ACTIVATE TOOL", fg_color=COLORS["accent_red"], hover_color="#C0392B", font=("Roboto", 16, "bold"), command=activate, height=50, width=380, corner_radius=10).pack(pady=10)
-        ctk.CTkLabel(win, text=f"Status: {status}", text_color=COLORS["text_dim"]).pack(pady=15)
+        # Load content based on view name
+        if name == "Samsung":
+            self.load_samsung_view()
+        elif name == "MTK":
+            self.load_mtk_view()
+        elif name == "Penumbra":
+            self.load_penumbra_view()
+        elif name == "Unisoc":
+            self.load_unisoc_view()
+        elif name == "ADB / Fastboot":
+            self.load_adb_fastboot_view()
+        elif name == "Settings":
+            self.load_settings_view()
+        else:
+            ctk.CTkLabel(self.current_view_frame, text=f"View for {name} not implemented yet.", font=("Roboto", 20)).pack(pady=50)
 
 
 if __name__ == "__main__":
