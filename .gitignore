@@ -1,0 +1,13 @@
+
+# Security & Config
+.env
+*.key
+tsp_license.json
+tsp_bot_db.json
+
+# Build & Dist
+dist/
+build/
+*.spec
+__pycache__/
+*.pyc

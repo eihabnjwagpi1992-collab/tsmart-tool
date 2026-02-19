@@ -1,0 +1,5 @@
+{
+    "version": "3.0.0",
+    "download_url": "https://github.com/eihabnjwagpi1992-collab/tsmart-tool/archive/refs/heads/main.zip",
+    "changelog": "- REBUILT: Entire UI system to prevent duplicate windows.\n- REBUILT: Update engine to run in background (No more freezing).\n- FIXED: Stacked views issue when switching between modules.\n- FIXED: HWID detection and stability on Windows 11.\n- FIXED: Redundant activation popups."
+}
