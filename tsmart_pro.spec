@@ -43,12 +43,17 @@ all_hidden = ctk_hidden + pil_hidden + wmi_hidden + [
     'pyserial',
     'pywin32',
     'cryptography',
-    'pycryptodome'
+    'pycryptodome',
+    'bridge_engine',
+    'device_engine',
+    'licensing',
+    'security',
+    'updater'
 ]
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=['.'],
     binaries=ctk_binaries + pil_binaries + wmi_binaries,
     datas=all_datas,
     hiddenimports=all_hidden,
