@@ -1,62 +1,47 @@
 # -*- mode: python ; coding: utf-8 -*-
+# TSmart Pro Tool - Ultimate Stable Spec (v3.2.5)
 import os
 import sys
-from PyInstaller.utils.hooks import collect_all
+import customtkinter
 
 block_cipher = None
-
-# --- Dependency Collection ---
-def get_all_from(package_name):
-    try:
-        datas, binaries, hiddenimports = collect_all(package_name)
-    except:
-        datas, binaries, hiddenimports = [], [], []
-    return datas, binaries, hiddenimports
-
-# Collect Critical UI and System Libraries
-ctk_datas, ctk_binaries, ctk_hidden = get_all_from('customtkinter')
-pil_datas, pil_binaries, pil_hidden = get_all_from('Pillow')
-wmi_datas, wmi_binaries, wmi_hidden = get_all_from('wmi')
-
-# Resource Bundling
-all_datas = ctk_datas + pil_datas + wmi_datas + [
-    ('mtkclient', 'mtkclient'),
-    ('unisoc', 'unisoc'),
-    ('penumbra', 'penumbra'),
-    ('bin', 'bin'),
-    ('drivers', 'drivers'),
-    ('version.json', '.'),
-    ('logo.png', '.')
-]
-
-# Hidden Imports for Runtime Stability
-all_hidden = ctk_hidden + pil_hidden + wmi_hidden + [
-    'usb.backend.libusb1',
-    'serial',
-    'packaging',
-    'packaging.version',
-    'PIL._tkinter_finder',
-    'win32timezone',
-    'requests',
-    'jsonrpc',
-    'pyusb',
-    'pyserial',
-    'pywin32',
-    'cryptography',
-    'pycryptodome',
-    'bridge_engine',
-    'device_engine',
-    'licensing',
-    'security',
-    'updater'
-]
+BASE_PATH = os.getcwd()
+ctk_path = os.path.dirname(customtkinter.__file__)
 
 a = Analysis(
     ['main.py'],
-    pathex=['.'],
-    binaries=ctk_binaries + pil_binaries + wmi_binaries,
-    datas=all_datas,
-    hiddenimports=all_hidden,
+    pathex=[BASE_PATH],
+    binaries=[],
+    datas=[
+        (ctk_path, 'customtkinter'),
+        ('mtkclient', 'mtkclient'),
+        ('unisoc', 'unisoc'),
+        ('penumbra', 'penumbra'),
+        ('bin', 'bin'),
+        ('drivers', 'drivers'),
+        ('version.json', '.'),
+        ('bridge_engine.py', '.'),
+        ('device_engine.py', '.'),
+        ('updater.py', '.'),
+        ('security.py', '.'),
+        ('licensing.py', '.')
+    ],
+    hiddenimports=[
+        'bridge_engine',
+        'device_engine',
+        'updater',
+        'security',
+        'licensing',
+        'customtkinter',
+        'PIL._tkinter_finder',
+        'usb.backend.libusb1',
+        'serial',
+        'packaging',
+        'packaging.version',
+        'wmi',
+        'pywin32',
+        'win32timezone'
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -89,4 +74,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=\'logo.png\',
+    icon=os.path.join('mtkclient', 'icon.ico') if os.path.exists(os.path.join('mtkclient', 'icon.ico')) else None,
+)
