@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# TSP TOOL PRO - Ultimate Suite Spec (v2.5.1)
+# TSP TOOL PRO - Ultimate Suite Spec (v2.5.2)
 import os
 import sys
 import customtkinter
@@ -43,7 +43,11 @@ a = Analysis(
         'pywin32',
         'win32timezone',
         'requests',
-        'dotenv'
+        'dotenv',
+        'PIL',
+        'PIL.Image',
+        'serial.tools',
+        'serial.tools.list_ports'
     ],
     hookspath=[],
     hooksconfig={},
