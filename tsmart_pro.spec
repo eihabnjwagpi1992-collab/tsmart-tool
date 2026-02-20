@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# TSmart Pro Tool - Ultimate OneDir Spec (v3.2.6)
+# TSP TOOL PRO - Ultimate Suite Spec (v2.5.1)
 import os
 import sys
 import customtkinter
@@ -20,6 +20,7 @@ a = Analysis(
         ('bin', 'bin'),
         ('drivers', 'drivers'),
         ('version.json', '.'),
+        ('logo.png', '.'),
         ('bridge_engine.py', '.'),
         ('device_engine.py', '.'),
         ('updater.py', '.'),
@@ -40,7 +41,9 @@ a = Analysis(
         'packaging.version',
         'wmi',
         'pywin32',
-        'win32timezone'
+        'win32timezone',
+        'requests',
+        'dotenv'
     ],
     hookspath=[],
     hooksconfig={},
@@ -59,7 +62,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='Tsmart_Pro_Tool',
+    name='TSP_TOOL_PRO',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -70,7 +73,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=os.path.join('mtkclient', 'icon.ico') if os.path.exists(os.path.join('mtkclient', 'icon.ico')) else None,
+    icon=None,
 )
 
 coll = COLLECT(
@@ -81,5 +84,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='Tsmart_Pro_v3.2_Suite',
+    name='TSP_TOOL_PRO_SUITE',
 )
