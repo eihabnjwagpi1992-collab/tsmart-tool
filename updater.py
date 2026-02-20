@@ -6,11 +6,18 @@ import zipfile
 import shutil
 import subprocess
 import time
-from packaging import version
 
-# تعريف الإصدار الحالي
-CURRENT_VERSION = "2.6.0"
-# رابط ملف الإصدار على GitHub
+# دالة لجلب المسار الصحيح للموارد في بيئة PyInstaller
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+# تعريف الإصدار الحالي (يتم تحديثه في كل نسخة جديدة)
+CURRENT_VERSION = "2.5.0"
+# رابط ملف الإصدار على GitHub (يجب تغييره لرابطك المباشر)
 VERSION_URL = "https://raw.githubusercontent.com/eihabnjwagpi1992-collab/tsmart-tool/main/version.json"
 
 class UpdateManager:
@@ -18,44 +25,43 @@ class UpdateManager:
         self.logger = logger_callback or print
 
     def check_for_updates(self):
-        """التحقق من وجود تحديث جديد"""
+        """التحقق من وجود تحديث جديد عبر مقارنة الإصدار الحالي مع السيرفر"""
         try:
             response = requests.get(VERSION_URL, timeout=10)
             if response.status_code == 200:
                 data = response.json()
                 latest_version = data.get("version", "1.0.0")
-                
-                if version.parse(latest_version) > version.parse(CURRENT_VERSION):
+                if latest_version > CURRENT_VERSION:
+                    self.logger(f"✨ New version available: {latest_version}", "success")
                     return data
                 else:
                     return None
             else:
+                self.logger(f"⚠️ Could not check for updates (Status: {response.status_code})", "error")
                 return None
         except Exception as e:
+            self.logger(f"❌ Update check failed: {str(e)}", "error")
             return None
 
     def download_and_install(self, update_url):
-        """تحميل التحديث وتثبيته في الخلفية"""
+        """تحميل التحديث وفك ضغطه واستبدال الملفات القديمة"""
         try:
             temp_zip = "update_package.zip"
-            self.logger(f"📥 Downloading update...", "info")
+            self.logger(f"📥 Downloading update from: {update_url}", "info")
             
-            response = requests.get(update_url, stream=True, timeout=30)
+            response = requests.get(update_url, stream=True)
             with open(temp_zip, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
             
-            self.logger("📦 Extracting update...", "info")
-            if os.path.exists("update_temp"):
-                shutil.rmtree("update_temp")
-            
+            self.logger("📦 Extracting update package...", "info")
             with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
                 zip_ref.extractall("update_temp")
             
             os.remove(temp_zip)
             
-            self.logger("🛠️ Applying update... The tool will restart.", "warning")
+            self.logger("🛠️ Preparing to restart and apply update...", "warning")
             self._apply_and_restart()
             return True
         except Exception as e:
@@ -63,24 +69,28 @@ class UpdateManager:
             return False
 
     def _apply_and_restart(self):
-        """إنشاء سكريبت باتش لاستبدال الملفات وإعادة التشغيل"""
+        """إنشاء سكريبت باتش (Windows) لاستبدال الملفات وإعادة التشغيل"""
         updater_script = "finish_update.bat"
+        exe_path = sys.executable
+        exe_name = os.path.basename(exe_path)
         
-        if getattr(sys, 'frozen', False):
-            exe_path = sys.executable
-        else:
-            exe_path = os.path.abspath(sys.argv[0])
-            
-        exe_dir = os.path.dirname(exe_path)
-        
-        with open(updater_script, "w", encoding="utf-8") as f:
-            f.write(f"""@echo off
+        with open(updater_script, "w") as f:
+            f.write(f"""
+@echo off
 timeout /t 2 /nobreak > nul
-xcopy /s /y /i "update_temp\\*" "{exe_dir}"
+xcopy /s /y "update_temp\\*" "."
 rd /s /q "update_temp"
-start "" "{exe_path}"
+start "" "{exe_name}"
 del "%~f0"
             """)
         
-        subprocess.Popen([updater_script], shell=True)
-        os._exit(0) # استخدام خروج قسري لضمان إغلاق كافة الخيوط
+        if os.name == 'nt':
+            subprocess.Popen([updater_script], shell=True)
+        else:
+            os.system("chmod +x finish_update.bat && ./finish_update.bat &")
+            
+        sys.exit()
+
+if __name__ == "__main__":
+    mgr = UpdateManager()
+    mgr.check_for_updates()
