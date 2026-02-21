@@ -3,9 +3,8 @@
 import os
 import sys
 import customtkinter
-import PyInstaller.utils.cipher
 
-block_cipher = PyInstaller.utils.cipher.AESCipher('78686d9e83b635a0bc623d63491521e8')
+block_cipher = None
 BASE_PATH = os.getcwd()
 ctk_path = os.path.dirname(customtkinter.__file__)
 
