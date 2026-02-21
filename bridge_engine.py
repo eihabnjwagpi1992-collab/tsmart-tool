@@ -1,5 +1,4 @@
 import os
-import os
 import subprocess
 import sys
 import threading
@@ -22,6 +21,13 @@ class BridgeEngine:
     def __init__(self, logger_callback):
         self.logger = logger_callback
         self.current_process = None
+
+    def get_tool_path(self, tool_name):
+        """الحصول على المسار الصحيح للأداة (ADB/Fastboot/Heimdall)"""
+        if os.name == 'nt':
+            return os.path.join(BASE_DIR, "bin", f"{tool_name}.exe")
+        else:
+            return os.path.join(BASE_DIR, "bin", tool_name)
 
     def run_mtk_command(self, action, args=None, use_custom_da=True, wait_for_device=False):
         """تشغيل أوامر MTK باستخدام مكتبة mtkclient مع حقن ملفات DA من Penumbra آلياً"""
@@ -57,44 +63,10 @@ class BridgeEngine:
         cmd = [python_exe, "-m", "mtk"] + injection_args + [action] + args
         self._execute_async(cmd)
 
-    def run_unisoc_command(self, action, args=None):
-        """تشغيل أوامر Unisoc باستخدام مكتبة unisoc المدمجة"""
-        if args is None:
-            args = []
-        self.logger(f"🚀 Starting Unisoc Action: {action}", "warning")
-        cli_path = os.path.join(BASE_DIR, "unisoc", "cli.py")
-        python_exe = sys.executable if not sys.executable.endswith(".exe") else "python"
-        cmd = [python_exe, cli_path, action] + args
-        self._execute_async(cmd)
-
-    def run_xiaomi_command(self, action, args=None):
-        """تشغيل أوامر Xiaomi/Penumbra"""
-        if args is None:
-            args = []
-        self.logger(f"🚀 Starting Xiaomi/Penumbra Action: {action}", "warning")
-
-        python_exe = sys.executable if not sys.executable.endswith(".exe") else "python"
-        script_path = os.path.join(BASE_DIR, "penumbra", "scripts", f"{action}.py")
-        if os.path.exists(script_path):
-            cmd = [python_exe, script_path] + args
-        else:
-            self.logger(f"⚠️ Penumbra script not found, falling back to MTK Engine for {action}", "info")
-            if action == "bypass":
-                cmd = [python_exe, "-m", "mtk", "erase", "config"]
-            else:
-                bin_path = os.path.join(BASE_DIR, "bin", "penumbra.exe")
-                if os.path.exists(bin_path):
-                    cmd = [bin_path, action] + args
-                else:
-                    self.logger(f"❌ Error: {action} module not integrated correctly.", "error")
-                    return
-
-        self._execute_async(cmd)
-
     def run_samsung_command(self, action, files=None):
         """تشغيل أوامر سامسونج (FRP, MTP, ADB)"""
         self.logger(f"🚀 Starting Samsung Action: {action}", "warning")
-        adb_path = os.path.join(BASE_DIR, "bin", "adb.exe")
+        adb_path = self.get_tool_path("adb")
         mtp_tool = os.path.join(BASE_DIR, "bin", "samsung_mtp.exe")
 
         if action == "mtp_browser":
@@ -125,6 +97,87 @@ class BridgeEngine:
             self.logger(f"❌ Samsung action {action} not fully implemented.", "error")
             return
 
+        self._execute_async(cmd)
+
+    def run_xiaomi_command(self, action, args=None):
+        """تشغيل أوامر Xiaomi باستخدام penumbra_engine الحقيقي"""
+        if args is None: args = []
+        self.logger(f"🔥 Xiaomi Engine: {action}", "warning")
+        
+        penumbra_path = self.get_tool_path("penumbra_engine")
+        # مثال: استدعاء penumbra_engine مع الإجراء المطلوب
+        cmd = [penumbra_path, action] + args
+        self._execute_async(cmd)
+
+    def run_adb_command(self, action, args=None):
+        """تشغيل أوامر ADB/Fastboot الحقيقية"""
+        if args is None: args = []
+        self.logger(f"🔥 ADB/Fastboot Action: {action}", "warning")
+        
+        adb_path = self.get_tool_path("adb")
+        fastboot_path = self.get_tool_path("fastboot")
+
+        # مثال بسيط: يمكن توسيع هذا ليشمل المزيد من أوامر ADB/Fastboot
+        if "adb" in action.lower():
+            cmd = [adb_path, action.replace("adb_", "").replace("_", " ")] + args
+        elif "fastboot" in action.lower():
+            cmd = [fastboot_path, action.replace("fastboot_", "").replace("_", " ")] + args
+        else:
+            self.logger(f"❌ Unknown ADB/Fastboot action: {action}", "error")
+            return
+        self._execute_async(cmd)
+
+    def run_device_checker_command(self, action, args=None):
+        """تشغيل أوامر فحص الجهاز (Device Checker) الحقيقية"""
+        if args is None: args = []
+        self.logger(f"🔥 Device Checker Action: {action}", "warning")
+        
+        adb_path = self.get_tool_path("adb")
+        fastboot_path = self.get_tool_path("fastboot")
+
+        if action == "check_adb_status":
+            cmd = [adb_path, "devices"]
+        elif action == "check_fastboot_status":
+            cmd = [fastboot_path, "devices"]
+        elif action == "read_device_info":
+            cmd = [adb_path, "shell", "getprop"]
+        # يمكن إضافة المزيد من الشروط لأوامر فحص الجهاز الأخرى
+        else:
+            self.logger(f"❌ Unknown Device Checker action: {action}", "error")
+            return
+        self._execute_async(cmd)
+
+    def run_partition_command(self, action, args=None):
+        """تشغيل أوامر إدارة الأقسام (Partition Manager) الحقيقية"""
+        if args is None: args = []
+        self.logger(f"🔥 Partition Manager Action: {action}", "warning")
+        
+        # هنا يمكن استدعاء أدوات مثل parted, fdisk, sgdisk أو أدوات مخصصة
+        # كمثال، سنستخدم adb لأوامر بسيطة تتعلق بالأقسام إذا كان الجهاز متصلاً
+        adb_path = self.get_tool_path("adb")
+
+        if action == "read_partition_table":
+            cmd = [adb_path, "shell", "cat", "/proc/partitions"]
+        elif action == "backup_partition":
+            # هذا يتطلب تحديد اسم القسم ومسار الحفظ
+            self.logger("⚠️ Backup Partition requires partition name and save path.", "error")
+            return
+        # يمكن إضافة المزيد من الشروط لأوامر الأقسام الأخرى
+        else:
+            self.logger(f"❌ Unknown Partition Manager action: {action}", "error")
+            return
+        self._execute_async(cmd)
+
+    def run_unisoc_command(self, action, args=None):
+        """تشغيل أوامر Unisoc الحقيقية"""
+        if args is None: args = []
+        self.logger(f"🚀 Unisoc Action: {action}", "warning")
+        # Unisoc موديول مدمج، نستخدم __main__.py أو cli.py
+        unisoc_main = os.path.join(BASE_DIR, "unisoc", "__main__.py")
+        if not os.path.exists(unisoc_main):
+            unisoc_main = os.path.join(BASE_DIR, "unisoc", "cli.py")
+            
+        cmd = [sys.executable, "-u", unisoc_main, action] + args
         self._execute_async(cmd)
 
     def _execute_async(self, cmd):
