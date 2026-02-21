@@ -1,3 +1,4 @@
+
 import os
 import sys
 import tkinter as tk
@@ -14,6 +15,7 @@ except ImportError:
 
 import customtkinter
 import security_utils
+from device_data import BRAND_DATA, CHIP_DATA, TOP_NAV_BRANDS # استيراد البيانات الجديدة
 
 # --- WINDOWS 10 COMPATIBILITY PATCH ---
 try:
@@ -184,163 +186,148 @@ class TSPToolPro(customtkinter.CTk):
         self.grid_rowconfigure(1, weight=1) # Main body row
         self.grid_rowconfigure(2, weight=0) # Log console row
 
-        # 1. TOP BAR
+        # 1. TOP BAR (Brands as Tabs)
         self.top_bar = customtkinter.CTkFrame(self, height=60, corner_radius=0, fg_color=COLORS["sidebar_bg"])
         self.top_bar.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
         self.top_nav_buttons = {}
-        top_nav_items = ["Samsung", "MTK", "Penumbra", "Unisoc", "Xiaomi", "ACB", "Settings"]
-        for item in top_nav_items:
+        for item in TOP_NAV_BRANDS:
             btn = customtkinter.CTkButton(self.top_bar, text=item, height=40, corner_radius=8, fg_color="transparent", hover_color=COLORS["accent_orange"], font=("Roboto", 14, "bold"),
                                 command=lambda i=item: self.show_view(i))
             btn.pack(side="left", padx=10, pady=10)
             self.top_nav_buttons[item] = btn
-
+        
         # 2. MAIN BODY (contains sidebar, content area, and monitor panel)
         self.main_body = customtkinter.CTkFrame(self, fg_color="transparent")
         self.main_body.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=10, pady=10)
         self.main_body.grid_columnconfigure(1, weight=1)
         self.main_body.grid_rowconfigure(0, weight=1)
 
-        # 3. SIDEBAR (Left)
-        self.sidebar = customtkinter.CTkFrame(self.main_body, width=220, corner_radius=10, fg_color=COLORS["card_bg"])
-        self.sidebar.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        # 3. SIDEBAR (Left) - Not used in this new layout, but keeping for potential future use or other elements
+        # self.sidebar = customtkinter.CTkFrame(self.main_body, width=220, corner_radius=10, fg_color=COLORS["card_bg"])
+        # self.sidebar.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        # customtkinter.CTkLabel(self.sidebar, text=security_utils.deobfuscate_string("VFNCIFRPT0wgUFJP"), font=("Impact", 28), text_color=COLORS["accent_orange"]).pack(pady=20)
 
-        customtkinter.CTkLabel(self.sidebar, text=security_utils.deobfuscate_string("VFNCIFRPT0wgUFJP"), font=("Impact", 28), text_color=COLORS["accent_orange"]).pack(pady=20)
-
-        nav_items = [
-            (security_utils.deobfuscate_string("SG9tZQ=="), "home_icon.png"), # Placeholder for icons
-            (security_utils.deobfuscate_string("U2Ftc3VuZw=="), "samsung_icon.png"),
-            (security_utils.deobfuscate_string("TVRLICYgU2NhdHRlcg=="), "mtk_icon.png"),
-            (security_utils.deobfuscate_string("UGFydGl0aW9uIE1hbmFnZXI="), "partition_icon.png"),
-            (security_utils.deobfuscate_string("RGV2aWNlIENoZWNrZXI="), "device_icon.png"),
-            (security_utils.deobfuscate_string("QURC"), "adb_icon.png"),
-            (security_utils.deobfuscate_string("U2V0dGluZ3M="), "settings_icon.png"),
-            (security_utils.deobfuscate_string("QWJvdXQ="), "about_icon.png"),
-        ]
-
-        self.nav_buttons = {}
-        for item, icon in nav_items:
-            btn = customtkinter.CTkButton(
-                self.sidebar, text=item, height=45, corner_radius=8, fg_color="transparent",
-                text_color=COLORS["text_dim"], hover_color=COLORS["accent_orange"], anchor="w", font=("Roboto", 14, "bold"),
-                command=lambda i=item: self.show_view(i)
-            )
-            btn.pack(fill="x", padx=10, pady=5)
-            self.nav_buttons[item] = btn
-
-        # 4. MAIN CONTENT (Center)
+        # 4. MAIN CONTENT (Center) - This will hold the dynamic views for each brand
         self.content_area = customtkinter.CTkFrame(self.main_body, corner_radius=10, fg_color=COLORS["card_bg"])
-        self.content_area.grid(row=0, column=1, sticky="nsew")
+        self.content_area.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=(0, 10)) # Adjusted to take more space
+        self.main_body.grid_columnconfigure(0, weight=1) # Give content area more weight
 
         # 5. RIGHT MONITOR
         self.monitor_panel = customtkinter.CTkFrame(self.main_body, width=280, corner_radius=10, fg_color=COLORS["card_bg"])
         self.monitor_panel.grid(row=0, column=2, sticky="nsew", padx=(10, 0))
 
-        customtkinter.CTkLabel(self.monitor_panel, text=security_utils.deobfuscate_string("REVWSUNFIE1PTklUT1I="), font=("Roboto", 18, "bold"), text_color="#F1C40F").pack(pady=25)
-
         self.device_list_box = customtkinter.CTkTextbox(self.monitor_panel, height=320, fg_color="#000000", text_color="#F1C40F", font=("Consolas", 13), border_width=1, border_color=COLORS["border"])
-        self.device_list_box.pack(padx=15, fill="x")
+        self.device_list_box.pack(padx=15, fill="x", pady=10)
+        customtkinter.CTkLabel(self.monitor_panel, text="Device Monitor", font=("Roboto", 16, "bold")).pack(pady=(0,5))
 
         # 6. LOG CONSOLE
         self.log_console = customtkinter.CTkTextbox(self, height=150, fg_color="#000000", text_color="#00FF00", font=("Consolas", 12), border_width=1, border_color=COLORS["border"])
         self.log_console.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=10, pady=(10, 0))
 
-        self.show_view("Home")
+        self.show_view(TOP_NAV_BRANDS[0]) # Show the first brand by default
 
-    def show_view(self, view_name):
+    def show_view(self, brand_name):
         if self.current_view_frame:
             self.current_view_frame.destroy()
 
-        if view_name == "Home":
-            self.current_view_frame = self.create_home_view()
-        elif view_name == "Samsung":
-            self.current_view_frame = self.create_samsung_view(self.bridge)
-        elif view_name == "MTK & Scatter":
-            self.current_view_frame = self.create_mtk_view(self.bridge)
-        elif view_name == "Xiaomi":
-            self.current_view_frame = self.create_xiaomi_view(self.bridge)
-        elif view_name == "Unisoc":
-            self.current_view_frame = self.create_unisoc_view(self.bridge)
-        elif view_name == "ADB":
-            self.current_view_frame = self.create_adb_view(self.bridge)
-        elif view_name == "Partition Manager":
-            self.current_view_frame = self.create_partition_manager_view(self.bridge)
-        elif view_name == "Device Checker":
-            self.current_view_frame = self.create_device_checker_view(self.bridge)
-        elif view_name == "Settings":
-            self.current_view_frame = self.create_settings_view()
-        elif view_name == "About":
-            self.current_view_frame = self.create_about_view()
+        self.current_view_frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
+        self.current_view_frame.pack(fill="both", expand=True)
+
+        brand_data = BRAND_DATA.get(brand_name)
+        if not brand_data:
+            customtkinter.CTkLabel(self.current_view_frame, text=f"No data found for {brand_name}", font=("Roboto", 24, "bold")).pack(pady=50)
+            return
+
+        # Top section for Model/Chip selection
+        top_frame = customtkinter.CTkFrame(self.current_view_frame, fg_color=COLORS["card_bg"], corner_radius=10)
+        top_frame.pack(fill="x", padx=10, pady=10)
+        top_frame.grid_columnconfigure(0, weight=1)
+        top_frame.grid_columnconfigure(1, weight=1)
+
+        # Model Selection
+        customtkinter.CTkLabel(top_frame, text="Select Model:", font=("Roboto", 14, "bold")).grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        model_options = list(brand_data["models"].keys())
+        self.model_dropdown = customtkinter.CTkOptionMenu(top_frame, values=model_options, command=self.on_model_selected)
+        self.model_dropdown.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        self.model_dropdown.set(model_options[0]) # Set default selected model
+
+        # Chip Info Display
+        customtkinter.CTkLabel(top_frame, text="Chip:", font=("Roboto", 14, "bold")).grid(row=0, column=1, padx=10, pady=5, sticky="w")
+        self.chip_label = customtkinter.CTkLabel(top_frame, text="N/A", font=("Roboto", 14))
+        self.chip_label.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+
+        # Operations Section
+        operations_frame = customtkinter.CTkFrame(self.current_view_frame, fg_color=COLORS["card_bg"], corner_radius=10)
+        operations_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        customtkinter.CTkLabel(operations_frame, text="Operations:", font=("Roboto", 16, "bold")).pack(pady=10)
+
+        self.operations_buttons_frame = customtkinter.CTkFrame(operations_frame, fg_color="transparent")
+        self.operations_buttons_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.operations_buttons_frame.grid_columnconfigure(0, weight=1)
+        self.operations_buttons_frame.grid_columnconfigure(1, weight=1)
+        self.operations_buttons_frame.grid_columnconfigure(2, weight=1)
+
+        # Instructions Section
+        self.instructions_frame = customtkinter.CTkFrame(operations_frame, fg_color=COLORS["bg_dark"], corner_radius=8, border_width=1, border_color=COLORS["border"])
+        self.instructions_frame.pack(fill="x", padx=10, pady=(0, 10))
+        
+        self.instructions_label = customtkinter.CTkLabel(self.instructions_frame, text="Select an operation to see instructions", font=("Roboto", 12, "italic"), text_color=COLORS["text_dim"], wraplength=600)
+        self.instructions_label.pack(pady=10, padx=10)
+
+        self.current_brand_name = brand_name
+        self.on_model_selected(model_options[0]) # Trigger initial display of operations
+
+    def on_model_selected(self, selected_model):
+        brand_data = BRAND_DATA.get(self.current_brand_name)
+        model_info = brand_data["models"].get(selected_model)
+
+        if model_info:
+            self.chip_label.configure(text=model_info["chip"])
+            operations_list = model_info["operations"]
+            self.update_operations_buttons(operations_list, brand_data["operations"])
         else:
-            self.current_view_frame = self.create_placeholder_view(view_name)
+            self.chip_label.configure(text="N/A")
+            self.update_operations_buttons([], {})
 
-        self.current_view_frame.pack(in_=self.content_area, fill="both", expand=True, padx=10, pady=10)
+    def update_operations_buttons(self, operations_list, brand_operations_map):
+        # Clear existing buttons
+        for widget in self.operations_buttons_frame.winfo_children():
+            widget.destroy()
 
-    def create_home_view(self):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        customtkinter.CTkLabel(frame, text=security_utils.deobfuscate_string("V2VsY29tZSB0byBUU1AgVE9PTCBQUk8="), font=("Roboto", 32, "bold")).pack(pady=50)
-        customtkinter.CTkLabel(frame, text=security_utils.deobfuscate_string("U2VsZWN0IGEgdG9vbCBmcm9tIHRoZSBzaWRlYmFyIHRvIGJlZ2luLg=="), font=("Roboto", 16)).pack()
-        return frame
+        row = 0
+        col = 0
+        for op_name in operations_list:
+            command_str = brand_operations_map.get(op_name)
+            if command_str:
+                btn = customtkinter.CTkButton(self.operations_buttons_frame, text=op_name, height=40, corner_radius=8, font=("Roboto", 12, "bold"),
+                                        command=lambda cmd=command_str, name=op_name: self.on_operation_click(cmd, name))
+                btn.grid(row=row, column=col, padx=5, pady=5, sticky="ew")
+                col += 1
+                if col > 2: # 3 buttons per row
+                    col = 0
+                    row += 1
 
-    def create_samsung_view(self, bridge):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        # Add Samsung specific widgets here
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("UmVhZCBJbmZv"), command=lambda: bridge.run_samsung_command("read_info")).pack(pady=10)
-        return frame
-
-    def create_mtk_view(self, bridge):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        # Add MTK specific widgets here
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("UmVhZCBJbmZv"), command=lambda: bridge.run_mtk_command("read_info")).pack(pady=10)
-        return frame
-
-    def create_xiaomi_view(self, bridge):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        # Add Xiaomi specific widgets here
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("UmVhZCBJbmZv"), command=lambda: bridge.run_xiaomi_command("read_info")).pack(pady=10)
-        return frame
-
-    def create_unisoc_view(self, bridge):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        # Add Unisoc specific widgets here
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("UmVhZCBJbmZv"), command=lambda: bridge.run_unisoc_command("read_info")).pack(pady=10)
-        return frame
-
-    def create_adb_view(self, bridge):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        # Add ADB specific widgets here
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("UmVhZCBJbmZv"), command=lambda: bridge.run_adb_command("read_info")).pack(pady=10)
-        return frame
-
-    def create_partition_manager_view(self, bridge):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        # Add Partition Manager specific widgets here
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("UmVhZCBQYXJ0aXRpb25z"), command=lambda: bridge.run_partition_command("read_partitions")).pack(pady=10)
-        return frame
-
-    def create_device_checker_view(self, bridge):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        # Add Device Checker specific widgets here
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("Q2hlY2sgRGV2aWNl"), command=lambda: bridge.run_device_checker_command("check_device")).pack(pady=10)
-        return frame
-
-    def create_settings_view(self):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        customtkinter.CTkLabel(frame, text=security_utils.deobfuscate_string("U2V0dGluZ3M="), font=("Roboto", 24, "bold")).pack(pady=20)
-        customtkinter.CTkButton(frame, text=security_utils.deobfuscate_string("Q2hlY2sgZm9yIFVwZGF0ZXM="), command=self.check_for_updates).pack(pady=10)
-        return frame
-
-    def create_about_view(self):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        customtkinter.CTkLabel(frame, text=security_utils.deobfuscate_string("QWJvdXQgVFNCIFRPT0wgUFJP"), font=("Roboto", 24, "bold")).pack(pady=20)
-        customtkinter.CTkLabel(frame, text=security_utils.deobfuscate_string("VmVyc2lvbiAzLjE="), font=("Roboto", 16)).pack()
-        return frame
-
-    def create_placeholder_view(self, view_name):
-        frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        customtkinter.CTkLabel(frame, text=f"{view_name} {security_utils.deobfuscate_string('Vmlldw==')}", font=("Roboto", 24, "bold")).pack(pady=20)
-        return frame
+    def on_operation_click(self, command_str, op_name):
+        # Update instructions based on operation
+        instructions = {
+            "FRP Bypass": "1. Power off device\n2. Hold Vol Up + Vol Down\n3. Connect USB Cable",
+            "Factory Reset": "1. Power off device\n2. Hold Vol Down + Power (or Vol Up + Vol Down)\n3. Connect USB Cable",
+            "BROM | ERASE FRP": "1. Power off device\n2. Connect USB Cable (Auto-detection active)",
+            "BROM | AUTH BYPASS": "1. Power off device\n2. Connect USB Cable for BROM injection",
+            "Mi Cloud Bypass": "1. Enter Sideload Mode (Vol Up + Power)\n2. Connect USB Cable",
+            "MTP Browser": "1. Power on device\n2. Connect to Wi-Fi\n3. Connect USB Cable",
+            "ADB Enable": "1. Go to Emergency Call\n2. Dial *#0*#\n3. Connect USB Cable"
+        }
+        
+        msg = instructions.get(op_name, "Follow the on-screen prompts in the log console.")
+        self.instructions_label.configure(text=f"INSTRUCTIONS for {op_name}:\n{msg}", text_color=COLORS["accent_orange"], font=("Roboto", 12, "bold"))
+        
+        # Execute command
+        try:
+            eval(f"self.bridge.{command_str}")
+        except Exception as e:
+            self.log(f"Error executing {op_name}: {str(e)}", "error")
 
     def log(self, message, level="info"):
         timestamp = datetime.now().strftime("%H:%M:%S")
