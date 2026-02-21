@@ -16,15 +16,15 @@ jobs:
         pip install pyinstaller customtkinter Pillow packaging wmi pywin32 requests pyserial python-dotenv SQLAlchemy Werkzeug pyTelegramBotAPI
     - name: Build TSmart Tool PRO with Hidden Imports
       run: |
-        pyinstaller --noconfirm --onefile --windowed --name "TSmart_Tool_PRO" ^
-        --hidden-import "sqlalchemy" ^
-        --hidden-import "sqlalchemy.sql.default_comparator" ^
-        --hidden-import "werkzeug.security" ^
-        --add-data "device_data.py;." ^
-        --add-data "hwid_utils.py;." ^
-        --add-data "database_manager.py;." ^
-        --add-data "auth.py;." ^
-        --add-data "bridge_engine.py;." ^
+        pyinstaller --noconfirm --onefile --windowed --name "TSmart_Tool_PRO" `
+        --hidden-import "sqlalchemy" `
+        --hidden-import "sqlalchemy.sql.default_comparator" `
+        --hidden-import "werkzeug.security" `
+        --add-data "device_data.py;." `
+        --add-data "hwid_utils.py;." `
+        --add-data "database_manager.py;." `
+        --add-data "auth.py;." `
+        --add-data "bridge_engine.py;." `
         --add-data "security_utils.py;." main.py
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
