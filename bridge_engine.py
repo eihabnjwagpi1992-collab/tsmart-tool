@@ -4,6 +4,7 @@ import subprocess
 import sys
 import threading
 import time
+import re
 
 # دالة لجلب المسار الصحيح للموارد في بيئة PyInstaller
 def resource_path(relative_path):
@@ -23,6 +24,22 @@ class BridgeEngine:
         self.logger = logger_callback
         self.current_process = None
 
+    def clean_log_message(self, message):
+        """تنظيف الرسائل من المسارات الحساسة وأسماء المجلدات"""
+        if not message: return ""
+        
+        # إخفاء المسارات الكاملة (مثل /home/ubuntu/...)
+        path_pattern = r'(/[a-zA-Z0-9._\-/]+)|([a-zA-Z]:\\[a-zA-Z0-9._\-\\]+)'
+        message = re.sub(path_pattern, "[System Path]", message)
+        
+        # إخفاء كلمات معينة قد تكشف هوية المحركات الداخلية
+        sensitive_words = ["Penumbra", "mtkclient", "unisoc", "python", "exe", "Library"]
+        for word in sensitive_words:
+            message = message.replace(word, "Core")
+            message = message.replace(word.lower(), "core")
+            
+        return message
+
     def get_tool_path(self, tool_name):
         """الحصول على المسار الصحيح للأداة (ADB/Fastboot/Heimdall)"""
         if os.name == 'nt':
@@ -31,20 +48,17 @@ class BridgeEngine:
             return os.path.join(BASE_DIR, "bin", tool_name)
 
     def _get_silent_engine_args(self):
-        """جلب وسائط المحرك القوي (Penumbra) بشكل صامت تماماً"""
+        """جلب وسائط المحرك القوي بشكل صامت تماماً"""
         injection_args = []
-        # المسارات السرية للمحرك
         engine_payloads = os.path.join(BASE_DIR, "penumbra", "core", "payloads")
         smart_da = os.path.join(engine_payloads, "extloader_v6.bin")
         auth_payload = os.path.join(engine_payloads, "hakujoudai.bin")
 
         if os.path.exists(smart_da):
-            # رسالة عامة لا تكشف هوية المحرك
             self.logger(f"⚙️ [System] Injecting Smart DA...", "success")
             injection_args.extend(["--da", smart_da])
         
         if os.path.exists(auth_payload):
-            # رسالة عامة لا تكشف هوية المحرك
             self.logger(f"🛡️ [System] Bypassing Auth...", "success")
             injection_args.extend(["--payload", auth_payload])
         
@@ -55,17 +69,13 @@ class BridgeEngine:
         if args is None:
             args = []
         
-        # الحفاظ على أسماء الأزرار الأصلية في الرسائل
         self.logger(f"🚀 Starting Action: {action}", "warning")
-        
-        # جلب وسائط المحرك القوي صمتاً
         injection_args = self._get_silent_engine_args()
 
         if wait_for_device:
             self.logger("⏳ Waiting for device connection...", "info")
 
         python_exe = sys.executable if not sys.executable.endswith(".exe") else "python"
-        # استدعاء المكتبة المدمجة لضمان العمل
         base_cmd = [python_exe, "-m", "mtkclient.Library.mtk_main"] + injection_args
 
         if action in ["frp_bypass", "BROM | ERASE FRP", "erase_frp"]:
@@ -79,7 +89,6 @@ class BridgeEngine:
         elif action == "read_info":
             cmd = base_cmd + ["info"]
         else:
-            # دعم أي أوامر أخرى تأتي من واجهة شاومي أو غيرها
             cmd = base_cmd + [action] + args
 
         self._execute_async(cmd)
@@ -90,10 +99,8 @@ class BridgeEngine:
         adb_path = self.get_tool_path("adb")
         mtp_tool = os.path.join(BASE_DIR, "bin", "samsung_mtp.exe") 
 
-        # إذا كانت العملية تخص سامسونج MTK (مثل FRP BROM)
         if action == "samsung_mtk_frp":
             self.logger("📱 Samsung Device Detected. Initializing...", "success")
-            # تشغيل المحرك القوي صمتاً في الخلفية
             self.run_mtk_command("frp_bypass", wait_for_device=True)
             return
 
@@ -128,7 +135,6 @@ class BridgeEngine:
     def run_xiaomi_command(self, action, args=None):
         """تشغيل أوامر Xiaomi باستخدام المحرك القوي صمتاً"""
         if args is None: args = []
-        # الحفاظ على اسم شاومي في الواجهة مع تشغيل المحرك القوي في الخلفية
         self.logger(f"🔥 Xiaomi Action: {action}", "warning")
         self.run_mtk_command(action, args, wait_for_device=True)
 
@@ -170,13 +176,10 @@ class BridgeEngine:
         self._execute_async(cmd)
 
     def _execute_async(self, cmd):
-        """تنفيذ الأوامر في الخلفية"""
+        """تنفيذ الأوامر في الخلفية مع تنظيف المخرجات"""
         def task():
             try:
                 cmd_str = [str(c) for c in cmd]
-                # إخفاء تفاصيل الأوامر التقنية التي تكشف هوية المحرك
-                # self.logger(f"Executing: {' '.join(cmd_str)}", "info")
-
                 startupinfo = None
                 if os.name == 'nt':
                     startupinfo = subprocess.STARTUPINFO()
@@ -197,18 +200,17 @@ class BridgeEngine:
                 if self.current_process.stdout:
                     for line in self.current_process.stdout:
                         if line.strip():
-                            # تصفية أي مخرجات قد تكشف هوية المحرك
-                            clean_line = line.strip()
-                            if "Penumbra" not in clean_line:
+                            clean_line = self.clean_log_message(line.strip())
+                            if clean_line:
                                 self.logger(clean_line, "info")
 
                 self.current_process.wait()
                 if self.current_process.returncode == 0:
                     self.logger("✅ SUCCESS: Operation completed.", "success")
                 else:
-                    self.logger(f"❌ FAILED: Exit code {self.current_process.returncode}", "error")
+                    self.logger(f"❌ FAILED: Process exited with status {self.current_process.returncode}", "error")
             except Exception as e:
-                self.logger(f"🛑 CRITICAL ERROR: {str(e)}", "error")
+                self.logger(f"🛑 ERROR: {self.clean_log_message(str(e))}", "error")
             finally:
                 self.current_process = None
 
