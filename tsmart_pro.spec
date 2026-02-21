@@ -1,8 +1,11 @@
+# -*- mode: python ; coding: utf-8 -*-
+# TSP TOOL PRO - Ultimate Suite Spec (v2.5.2)
 import os
 import sys
 import customtkinter
+import PyInstaller.utils.cipher
 
-block_cipher = None
+block_cipher = PyInstaller.utils.cipher.AESCipher('78686d9e83b635a0bc623d63491521e8')
 BASE_PATH = os.getcwd()
 ctk_path = os.path.dirname(customtkinter.__file__)
 
@@ -23,7 +26,7 @@ a = Analysis(
         ('device_engine.py', '.'),
         ('updater.py', '.'),
         ('security.py', '.'),
-        ('auth.py', '.')
+        ('auth.py', '.'),
     ],
     hiddenimports=[
         'bridge_engine',
