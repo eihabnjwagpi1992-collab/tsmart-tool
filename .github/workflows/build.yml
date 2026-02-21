@@ -1,4 +1,4 @@
-name: Build TSmart Tool PRO (Fixed)
+name: Build TSmart Tool PRO (Final)
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -10,22 +10,27 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    - name: Install Essential Dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller customtkinter Pillow packaging wmi pywin32 requests pyserial python-dotenv SQLAlchemy Werkzeug pyTelegramBotAPI
-    - name: Build TSmart Tool PRO with Hidden Imports
+        pip install pyinstaller customtkinter Pillow packaging wmi pywin32 requests pyserial python-dotenv SQLAlchemy Werkzeug pyTelegramBotAPI cryptography pycryptodome tqdm colorama
+    - name: Build TSmart Tool PRO
       run: |
         pyinstaller --noconfirm --onefile --windowed --name "TSmart_Tool_PRO" `
-        --hidden-import "sqlalchemy" `
-        --hidden-import "sqlalchemy.sql.default_comparator" `
-        --hidden-import "werkzeug.security" `
+        --add-data "bin;bin" `
+        --add-data "mtkclient;mtkclient" `
+        --add-data "unisoc;unisoc" `
+        --add-data "penumbra;penumbra" `
         --add-data "device_data.py;." `
         --add-data "hwid_utils.py;." `
         --add-data "database_manager.py;." `
         --add-data "auth.py;." `
         --add-data "bridge_engine.py;." `
-        --add-data "security_utils.py;." main.py
+        --add-data "security_utils.py;." `
+        --hidden-import "sqlalchemy" `
+        --hidden-import "sqlalchemy.sql.default_comparator" `
+        --hidden-import "werkzeug.security" `
+        main.py
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
