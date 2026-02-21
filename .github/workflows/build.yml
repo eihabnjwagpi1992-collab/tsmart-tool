@@ -1,35 +1,33 @@
-name: Build TSP TOOL PRO (Stable Release)
-
+name: Build TSmart Tool PRO (Fixed)
 on: [push, workflow_dispatch]
-
 jobs:
   build:
     runs-on: windows-latest
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
-
+        python-version: '3.11'
     - name: Install Essential Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller customtkinter Pillow packaging wmi pywin32 requests pyserial python-dotenv
-
-    - name: Build Full Suite
+        pip install pyinstaller customtkinter Pillow packaging wmi pywin32 requests pyserial python-dotenv SQLAlchemy Werkzeug pyTelegramBotAPI
+    - name: Build TSmart Tool PRO with Hidden Imports
       run: |
-        pyinstaller --clean tsmart_pro.spec
-
-    - name: Compress Build Folder
-      shell: pwsh
-      run: |
-        Compress-Archive -Path dist/TSP_TOOL_PRO_SUITE/* -DestinationPath dist/TSP_TOOL_PRO_v2.5.zip
-
-    - name: Upload Full ZIP
+        pyinstaller --noconfirm --onefile --windowed --name "TSmart_Tool_PRO" ^
+        --hidden-import "sqlalchemy" ^
+        --hidden-import "sqlalchemy.sql.default_comparator" ^
+        --hidden-import "werkzeug.security" ^
+        --add-data "device_data.py;." ^
+        --add-data "hwid_utils.py;." ^
+        --add-data "database_manager.py;." ^
+        --add-data "auth.py;." ^
+        --add-data "bridge_engine.py;." ^
+        --add-data "security_utils.py;." main.py
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: TSP_TOOL_PRO_v2.5_Package
-        path: dist/TSP_TOOL_PRO_v2.5.zip
+        name: TSmart_Tool_PRO_Package
+        path: dist/TSmart_Tool_PRO.exe
