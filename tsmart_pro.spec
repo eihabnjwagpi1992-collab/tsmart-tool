@@ -26,6 +26,7 @@ a = Analysis(
         ('updater.py', '.'),
         ('security.py', '.'),
         ('auth.py', '.'),
+        ('security_utils.py', '.'),
     ],
     hiddenimports=[
         'bridge_engine',
@@ -33,6 +34,7 @@ a = Analysis(
         'updater',
         'security',
         'auth',
+        'security_utils',
         'customtkinter',
         'PIL._tkinter_finder',
         'usb.backend.libusb1',
