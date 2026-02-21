@@ -339,7 +339,7 @@ class TSPToolPro(customtkinter.CTk):
 
     def create_placeholder_view(self, view_name):
         frame = customtkinter.CTkFrame(self.content_area, fg_color="transparent")
-        customtkinter.CTkLabel(frame, text=f"{view_name} {security_utils.deobfuscate_string("Vmlldw==")}", font=("Roboto", 24, "bold")).pack(pady=20)
+        customtkinter.CTkLabel(frame, text=f"{view_name} {security_utils.deobfuscate_string('Vmlldw==')}", font=("Roboto", 24, "bold")).pack(pady=20)
         return frame
 
     def log(self, message, level="info"):
