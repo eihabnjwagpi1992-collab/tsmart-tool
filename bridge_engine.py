@@ -30,42 +30,42 @@ class BridgeEngine:
         else:
             return os.path.join(BASE_DIR, "bin", tool_name)
 
-    def _get_penumbra_args(self):
-        """جلب وسائط Penumbra لحقن DA و Auth Bypass"""
+    def _get_silent_engine_args(self):
+        """جلب وسائط المحرك القوي (Penumbra) بشكل صامت تماماً"""
         injection_args = []
-        penumbra_payloads = os.path.join(BASE_DIR, "penumbra", "core", "payloads")
-        best_da = os.path.join(penumbra_payloads, "extloader_v6.bin")
-        best_payload = os.path.join(penumbra_payloads, "hakujoudai.bin")
+        # المسارات السرية للمحرك
+        engine_payloads = os.path.join(BASE_DIR, "penumbra", "core", "payloads")
+        smart_da = os.path.join(engine_payloads, "extloader_v6.bin")
+        auth_payload = os.path.join(engine_payloads, "hakujoudai.bin")
 
-        if os.path.exists(best_da):
-            self.logger(f"💉 Penumbra Engine: Injecting Smart DA ({os.path.basename(best_da)})", "success")
-            injection_args.extend(["--da", best_da])
+        if os.path.exists(smart_da):
+            # رسالة عامة لا تكشف هوية المحرك
+            self.logger(f"⚙️ [System] Injecting Smart DA...", "success")
+            injection_args.extend(["--da", smart_da])
         
-        if os.path.exists(best_payload):
-            self.logger(f"🔓 Penumbra Engine: Injecting Auth Bypass Payload ({os.path.basename(best_payload)})", "success")
-            injection_args.extend(["--payload", best_payload])
-        
-        if not injection_args:
-            self.logger("⚠️ Penumbra assets not found, using default MTK loader", "info")
+        if os.path.exists(auth_payload):
+            # رسالة عامة لا تكشف هوية المحرك
+            self.logger(f"🛡️ [System] Bypassing Auth...", "success")
+            injection_args.extend(["--payload", auth_payload])
         
         return injection_args
 
     def run_mtk_command(self, action, args=None, wait_for_device=False):
-        """تشغيل أوامر MTK مع حقن Penumbra آلياً للأجهزة الحديثة"""
+        """تشغيل أوامر MTK مع حقن المحرك القوي في الخلفية صمتاً"""
         if args is None:
             args = []
         
-        self.logger(f"🚀 Starting MTK Action: {action}", "warning")
+        # الحفاظ على أسماء الأزرار الأصلية في الرسائل
+        self.logger(f"🚀 Starting Action: {action}", "warning")
         
-        # استخدام Penumbra دائماً للأجهزة الحديثة
-        injection_args = self._get_penumbra_args()
+        # جلب وسائط المحرك القوي صمتاً
+        injection_args = self._get_silent_engine_args()
 
         if wait_for_device:
-            self.logger("⏳ Turbo Mode Active: Waiting for BROM Port...", "info")
+            self.logger("⏳ Waiting for device connection...", "info")
 
-        # محاولة تشغيل mtkclient عبر المكتبة المدمجة
         python_exe = sys.executable if not sys.executable.endswith(".exe") else "python"
-        # تعديل الاستدعاء ليكون عبر mtkclient.Library.mtk_main إذا كان mtk.py مفقوداً
+        # استدعاء المكتبة المدمجة لضمان العمل
         base_cmd = [python_exe, "-m", "mtkclient.Library.mtk_main"] + injection_args
 
         if action in ["frp_bypass", "BROM | ERASE FRP", "erase_frp"]:
@@ -79,25 +79,26 @@ class BridgeEngine:
         elif action == "read_info":
             cmd = base_cmd + ["info"]
         else:
-            self.logger(f"❌ MTK action {action} not recognized.", "error")
-            return
+            # دعم أي أوامر أخرى تأتي من واجهة شاومي أو غيرها
+            cmd = base_cmd + [action] + args
 
         self._execute_async(cmd)
 
     def run_samsung_command(self, action, files=None):
-        """تشغيل أوامر سامسونج مع دعم Penumbra لمعالجات MTK"""
+        """تشغيل أوامر سامسونج مع دعم المحرك القوي صمتاً لمعالجات MTK"""
         self.logger(f"🚀 Starting Samsung Action: {action}", "warning")
         adb_path = self.get_tool_path("adb")
         mtp_tool = os.path.join(BASE_DIR, "bin", "samsung_mtp.exe") 
 
         # إذا كانت العملية تخص سامسونج MTK (مثل FRP BROM)
         if action == "samsung_mtk_frp":
-            self.logger("📱 Samsung MTK detected! Using Penumbra for FRP Bypass...", "success")
+            self.logger("📱 Samsung Device Detected. Initializing...", "success")
+            # تشغيل المحرك القوي صمتاً في الخلفية
             self.run_mtk_command("frp_bypass", wait_for_device=True)
             return
 
         if action == "mtp_browser":
-            self.logger("🌐 Sending MTP Command to open Browser...", "info")
+            self.logger("🌐 Opening Browser via MTP...", "info")
             cmd = [mtp_tool, "-open", "https://www.youtube.com"]
         
         elif action == "adb_enable":
@@ -119,17 +120,16 @@ class BridgeEngine:
             cmd = [adb_path, "shell", "getprop"]
 
         else:
-            self.logger(f"❌ Samsung action {action} not fully implemented.", "error")
+            self.logger(f"❌ Action {action} not fully implemented.", "error")
             return
 
         self._execute_async(cmd)
 
     def run_xiaomi_command(self, action, args=None):
-        """تشغيل أوامر Xiaomi باستخدام Penumbra Engine"""
+        """تشغيل أوامر Xiaomi باستخدام المحرك القوي صمتاً"""
         if args is None: args = []
-        self.logger(f"🔥 Xiaomi Engine: {action}", "warning")
-        
-        # استخدام Penumbra دائماً لشاومي MTK
+        # الحفاظ على اسم شاومي في الواجهة مع تشغيل المحرك القوي في الخلفية
+        self.logger(f"🔥 Xiaomi Action: {action}", "warning")
         self.run_mtk_command(action, args, wait_for_device=True)
 
     def run_adb_command(self, action, args=None):
@@ -147,7 +147,7 @@ class BridgeEngine:
         elif action == "read_info":
             cmd = [adb_path, "shell", "getprop"]
         else:
-            self.logger(f"❌ Unknown ADB/Fastboot action: {action}", "error")
+            self.logger(f"❌ Unknown action: {action}", "error")
             return
         self._execute_async(cmd)
 
@@ -174,7 +174,8 @@ class BridgeEngine:
         def task():
             try:
                 cmd_str = [str(c) for c in cmd]
-                self.logger(f"Executing: {' '.join(cmd_str)}", "info")
+                # إخفاء تفاصيل الأوامر التقنية التي تكشف هوية المحرك
+                # self.logger(f"Executing: {' '.join(cmd_str)}", "info")
 
                 startupinfo = None
                 if os.name == 'nt':
@@ -196,7 +197,10 @@ class BridgeEngine:
                 if self.current_process.stdout:
                     for line in self.current_process.stdout:
                         if line.strip():
-                            self.logger(line.strip(), "info")
+                            # تصفية أي مخرجات قد تكشف هوية المحرك
+                            clean_line = line.strip()
+                            if "Penumbra" not in clean_line:
+                                self.logger(clean_line, "info")
 
                 self.current_process.wait()
                 if self.current_process.returncode == 0:
