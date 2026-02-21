@@ -1,5 +1,3 @@
-# -*- mode: python ; coding: utf-8 -*-
-# TSP TOOL PRO - Ultimate Suite Spec (v2.5.2)
 import os
 import sys
 import customtkinter
@@ -25,14 +23,14 @@ a = Analysis(
         ('device_engine.py', '.'),
         ('updater.py', '.'),
         ('security.py', '.'),
-        ('licensing.py', '.')
+        ('auth.py', '.')
     ],
     hiddenimports=[
         'bridge_engine',
         'device_engine',
         'updater',
         'security',
-        'licensing',
+        'auth',
         'customtkinter',
         'PIL._tkinter_finder',
         'usb.backend.libusb1',
